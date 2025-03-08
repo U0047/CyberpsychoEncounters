@@ -1,0 +1,2524 @@
+import Utils2077.AIUtils.MountEntityToVehicle
+import Utils2077.MiscUtils.DelayDaemon
+import Utils2077.SpawnUtils.{findValidSpawnPointInCube,
+                             GetNearbyVehicleSpawnPoints}
+import Utils2077.SpatialUtils.{GetDistrictManager,
+                               GetCurrentDistrict,
+                               HasSpaceInFrontOfPoint,
+                               GetEntitiesInPrism,
+                               IsPlayerNearQuestMappin,
+                               isPointInAnyLoadedSecurityAreaRadius}
+native func LogChannel(channel: CName, const text: script_ref<String>)
+
+// This is here to prevent police from going ballistic on civs.
+@wrapMethod(AIActionHelper)
+public final static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>,
+                                                      target: ref<GameObject>) -> Bool {
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(GetGameInstance());
+    if psychoSys.isCyberpsychoEventInProgress() && owner.IsPrevention() {
+        if (target as ScriptedPuppet).IsCivilian() || (target as ScriptedPuppet).IsCrowd() {
+            return false;
+        };
+    };
+    return wrappedMethod(owner, target);
+};
+
+// This is here to prevent police from going completely nuts on all civs when
+// hitting cars while leaving.
+@wrapMethod(VehicleComponent)
+protected cb func OnGridDestruction(evt: ref<VehicleGridDestructionEvent>) -> Bool {
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(GetGameInstance());
+        if psychoSys.isCyberpsychoEventInProgress()
+        || psychoSys.lastEncounterSeconds < Cast<Uint32>(45) {
+            if this.GetVehicle().IsPrevention() && evt.rammedOtherVehicle {
+                return false;
+            };
+        };
+    return wrappedMethod(evt);
+};
+
+// This is here to redirect maxtac fear event to psycho instead of the player.
+@wrapMethod(PsychoSquadAvHelperClass)
+private final func OnMaxTacFearEventDelayed(evt: ref<MaxTacFearEvent>) -> Void {
+    let gi: GameInstance = GetGameInstance();
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+    if psychoSys.isCyberpsychoEventInProgress() {
+        let psycho = GameInstance.FindEntityByID(gi, psychoSys.cyberpsychoID) as GameObject;
+        evt.player = psycho;
+    };
+    wrappedMethod(evt);
+};
+
+// This is here to stop maxtac from automatically turning hostile to the player.
+@wrapMethod(PsychoSquadAvHelperClass)
+public final static func GetOffAV(go: ref<GameObject>) -> Void {
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(GetGameInstance());
+    let gi: GameInstance = GetGameInstance();
+    if psychoSys.isCyberpsychoEventInProgress() {
+        let psycho = GameInstance.FindEntityByID(gi, psychoSys.cyberpsychoID) as GameObject;
+        psychoSys.GetOffAVPsycho(psycho, go);
+        return;
+    };
+    wrappedMethod(go);
+};
+
+// This is here to redirect detection from the player to the cyberpsycho.
+@wrapMethod(DetectPlayerFromAV)
+protected func Activate(context: ScriptExecutionContext) -> Void {
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(GetGameInstance());
+    let gi: GameInstance = GetGameInstance();
+    let av: ref<GameObject> = ScriptExecutionContext.GetOwner(context);
+    if psychoSys.isCyberpsychoEventInProgress() {
+        let cyberpsycho = GameInstance.FindEntityByID(gi, psychoSys.cyberpsychoID) as ScriptedPuppet;
+        psychoSys.MaxtacDetectPsychoFromAV(av, cyberpsycho);
+        return;
+    };
+    wrappedMethod(context);
+};
+
+// This is here to redirect the maxtac's threat injection
+// to the cyberpsycho instead of player
+@wrapMethod(RegisterPsychoSquadPassengers)
+protected func Activate(context: ScriptExecutionContext) -> Void {
+    let go: ref<GameObject> = ScriptExecutionContext.GetOwner(context);
+    let gi: GameInstance = go.GetGame();
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+    let i: Int32;
+    let passenger: wref<ScriptedPuppet>;
+    let passengers: array<wref<GameObject>>;
+    let gi: GameInstance = go.GetGame();
+    let id: EntityID = go.GetEntityID();
+    if psychoSys.isCyberpsychoEventInProgress() {
+        VehicleComponent.GetAllPassengers(gi, id, false, passengers);
+        i = 0;
+        while i < ArraySize(passengers) {
+          passenger = passengers[i] as ScriptedPuppet;
+          passenger.TryRegisterToPrevention();
+          i += 1;
+        };
+        return;
+    };
+    wrappedMethod(context);
+};
+
+// This is here to manage visbility of the psycho's stealth mappin
+// so that it doesn't z tear with the actual cyberpsycho mappin.
+@wrapMethod(MinimapStealthMappinController)
+protected func Update() -> Void {
+    let gi: GameInstance = GetGameInstance();
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+    let cyberpsycho = GameInstance.FindEntityByID(gi, psychoSys.cyberpsychoID) as NPCPuppet;
+    let cyberpsychoID = psychoSys.cyberpsychoID;
+    if psychoSys.isCyberpsychoEventInProgress()
+    && (this.m_mappin as StealthMappin).GetGameObject().GetEntityID() == cyberpsychoID {
+        if !psychoSys.isCyberpsychoDefeated() {
+            this.SetForceShow(false);
+            this.SetForceHide(true);
+            return;
+        } else {
+            this.SetForceShow(true);
+            this.SetForceHide(false);
+        };
+    };
+    wrappedMethod();
+};
+
+//Here to prevent police from being aggro'd by player when shot during psycho
+//event
+@wrapMethod(StealthMappinController)
+private final func UpdateNPCDetection(percent: Float) -> Void {
+    let gi: GameInstance = GetGameInstance();
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+    let preventionSys = GameInstance.GetScriptableSystemsContainer(gi).Get(n"PreventionSystem") as PreventionSystem;
+    if psychoSys.isCyberpsychoEventInProgress() {
+        if this.m_ownerNPC.IsPrevention()
+        && Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
+            this.m_isInCombatWithPlayer = false;
+        };
+    };
+    wrappedMethod(percent);
+};
+
+// see the big-brained stuff in StealthMappinController.UpdateNPCDetection to
+// understand why this is necessary.
+@wrapMethod(StealthMappinController)
+private final func UpdateNameplateColor(isHostile: Bool) -> Void {
+    let gi: GameInstance = GetGameInstance();
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+    let preventionSys = GameInstance.GetScriptableSystemsContainer(gi).Get(n"PreventionSystem") as PreventionSystem;
+    if psychoSys.isCyberpsychoEventInProgress() {
+        if isHostile
+        && this.m_ownerNPC.IsPrevention()
+        && Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
+            return;
+        };
+    };
+    wrappedMethod(isHostile);
+};
+
+// FIXME This is a workaround to a bug where spawned police turn
+// hostile to the player if the cyberpsycho detects the player. 
+// Technically works but a real fix should be found.
+@wrapMethod(TargetTrackingExtension)
+protected cb func OnEnemyThreatDetected(th: ref<EnemyThreatDetected>) -> Bool {
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(GetGameInstance());
+    if psychoSys.isCyberpsychoEventInProgress() {
+        if (th.threat as ScriptedPuppet).IsPlayer()
+        && (th.owner as ScriptedPuppet).IsPrevention() {
+            return false;
+        };
+    };
+    return wrappedMethod(th);
+}
+
+// When Prevention units are spawned in they something causes all commands to be
+// cancelled and this join traffic function is started. This is here to prevent
+// that when spawning in the police convoy.
+@wrapMethod(JoinTrafficInPoliceVehicle)
+protected func Activate(context: ScriptExecutionContext) -> Void {
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(GetGameInstance());
+    if psychoSys.isCyberpsychoEventInProgress() {
+        let vehID = this.m_vehicle.GetEntityID();
+        for squad in psychoSys.groundPoliceSquads {
+            if squad[0] == vehID {
+                return;
+            };
+        };
+        return;
+    };
+    wrappedMethod(context);
+};
+
+// This is here so that the custom cyberpsycho map pin can be registered.
+@wrapMethod(MinimapContainerController)
+public func CreateMappinUIProfile(mappin: wref<IMappin>,
+                                  mappinVariant: gamedataMappinVariant, 
+                                  customData: ref<MappinControllerCustomData>) -> MappinUIProfile {
+    let UIProfile = wrappedMethod(mappin, mappinVariant, customData);
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(GetGameInstance());
+    if psychoSys.isCyberpsychoEventInProgress() {
+        if Equals(mappin.GetNewMappinID(), psychoSys.cyberpsychoMappinID) {
+            return MappinUIProfile.Create(r"base\\gameplay\\gui\\widgets\\minimap\\minimap_world_encounter_mappin.inkwidget",
+                                          t"MappinUISpawnProfile.WorldEncounter",
+                                          t"MinimapMappinUIProfile.RandomCyberpsychosEvent");
+        };
+    };
+    return UIProfile;
+};
+
+// This is here to prevent the cyberpsycho from idling and standing in place
+// when they run out of targets.
+@wrapMethod(NPCStatesComponent)
+private final func ChangeHighLevelState(newState: gamedataNPCHighLevelState) -> Void {
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(GetGameInstance());
+    if psychoSys.isCyberpsychoEventInProgress()
+    && (this.GetOwner() as ScriptedPuppet).GetEntityID() == psychoSys.cyberpsychoID
+    && Equals(newState, gamedataNPCHighLevelState.Relaxed) {
+        return;
+    };
+    wrappedMethod(newState);
+};
+
+// This is here to prevent the cyberpsycho from idling and standing in place
+// when they run out of targets.
+@wrapMethod(StackRelaxedState)
+public func GetDesiredHighLevelState(context: ScriptExecutionContext) -> gamedataNPCHighLevelState {
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(GetGameInstance());
+    if psychoSys.isCyberpsychoEventInProgress()
+    && context.GetOwner().GetEntityID() == psychoSys.cyberpsychoID {
+        return gamedataNPCHighLevelState.Alerted;
+    };
+    return gamedataNPCHighLevelState.Relaxed;
+}
+
+// This is here to prevent the cyberpsycho from idling and standing in place
+// when they run out of targets.
+@wrapMethod(RelaxedState)
+public func GetDesiredHighLevelState(context: ScriptExecutionContext) -> gamedataNPCHighLevelState {
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(GetGameInstance());
+    if psychoSys.isCyberpsychoEventInProgress()
+    && context.GetOwner().GetEntityID() == psychoSys.cyberpsychoID {
+        return gamedataNPCHighLevelState.Alerted;
+    };
+    return gamedataNPCHighLevelState.Relaxed;
+}
+
+// This is here to prevent cyberpsycho from idling in place if there's no
+// nearby targets.
+@wrapMethod(NPCPuppet)
+public final static func ChangeHighLevelState(obj: ref<GameObject>,
+                                              newState: gamedataNPCHighLevelState) -> Void {
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(GetGameInstance());
+    if psychoSys.isCyberpsychoEventInProgress()
+    && Equals(newState, gamedataNPCHighLevelState.Relaxed)
+    && obj.GetEntityID() == psychoSys.cyberpsychoID
+    && Equals(newState, gamedataNPCHighLevelState.Relaxed) {
+        return;
+    };
+    wrappedMethod(obj, newState);
+};
+
+// This is here to prevent civs from attacking
+// the player when a cyberpsycho attack is underway.
+@wrapMethod(ReactionManagerComponent)
+private final func ShouldTriggerAggressiveCrowdNPCCombat(stimEvent: ref<StimuliEvent>) -> Bool {
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(GetGameInstance());
+    if psychoSys.isCyberpsychoEventInProgress() && !psychoSys.isCyberpsychoDefeated() {
+        return false;
+    };
+    return wrappedMethod(stimEvent);
+};
+
+// This is here so that the cyberpsycho can't immediately get taken out by
+// a panic driving civ.
+@wrapMethod(DamageSystem)
+private final func ProcessVehicleHit(hitEvent: ref<gameHitEvent>) -> Void {
+    let gi: GameInstance = GetGameInstance();
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+    let vehicleHitEvent: ref<gameVehicleHitEvent> = hitEvent as gameVehicleHitEvent;
+    wrappedMethod(hitEvent);
+    if IsDefined(vehicleHitEvent)
+    && psychoSys.isCyberpsychoEventInProgress()
+    && hitEvent.target == GameInstance.FindEntityByID(gi, psychoSys.cyberpsychoID) {
+        hitEvent.attackComputed.MultAttackValue(0.10);
+    };
+};
+
+// This is here so that players cannot just go on a rampage without police
+// responding.
+@wrapMethod(ScriptedPuppet)
+protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
+    let gi: GameInstance = GetGameInstance();
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+    if !psychoSys.isCyberpsychoEventInProgress() || psychoSys.isCyberpsychoDefeated() {
+        return wrappedMethod(evt);
+    };
+
+    if evt.instigator.IsPlayer() {
+        let isCiv = this.IsCivilian();
+        let isPolice = this.IsPrevention();
+        if isCiv {
+           psychoSys.playerCivsKilled += Cast<Uint8>(1u);
+        } else {
+            if isPolice {
+                psychoSys.playerCopsKilled += Cast<Uint8>(1u);
+            };
+        };
+
+        if psychoSys.playerCivsKilled > Cast<Uint8>(1u)
+        || psychoSys.playerCopsKilled > Cast<Uint8>(0u) {
+            let preventionSys = GameInstance.GetScriptableSystemsContainer(gi).Get(n"PreventionSystem") as PreventionSystem;
+            preventionSys.TogglePreventionSystem(true);
+            preventionSys.ChangeHeatStage(EPreventionHeatStage.Heat_3, "EnterCombat");
+        };
+    };
+    return wrappedMethod(evt);
+};
+
+// This is here so that players cannot just go on a rampage during psycho events
+// without police responding.
+@wrapMethod(ScriptedPuppet)
+protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
+    let gi: GameInstance = GetGameInstance();
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+    if !psychoSys.isCyberpsychoEventInProgress() || psychoSys.isCyberpsychoDefeated() {
+        return wrappedMethod(evt);
+    };
+
+    let attackData = evt.attackData;
+    if attackData.instigator.IsPlayer() {
+        let isPolice = this.IsPrevention();
+        let attackType = attackData.attackType;
+
+        if !isPolice {
+            return wrappedMethod(evt);
+        };
+
+        psychoSys.playerCopHitCount += Cast<Uint8>(1u);
+        if psychoSys.playerCopHitCount > Cast<Uint8>(3)
+        || AttackData.IsHack(attackType)
+        || attackData.minimumHealthPercent > 60.00  {
+            let preventionSys = GameInstance.GetScriptableSystemsContainer(gi).Get(n"PreventionSystem") as PreventionSystem;
+            preventionSys.TogglePreventionSystem(true);
+            GameInstance.GetPreventionSpawnSystem(gi).TogglePreventionActive(true);
+            preventionSys.ChangeHeatStage(EPreventionHeatStage.Heat_3, "EnterCombat");
+        };
+    };
+    return wrappedMethod(evt);
+};
+
+// This is here to prevent police from reacting to all player hits.
+@wrapMethod(PreventionSystem)
+public final static func ShouldPreventionSystemReactToDamageDealt(puppet: wref<ScriptedPuppet>) -> Bool {
+    let gi: GameInstance = GetGameInstance();
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+    if psychoSys.isCyberpsychoEventInProgress() && !psychoSys.isCyberpsychoDefeated() {
+        return false;
+    };
+    return wrappedMethod(puppet);
+};
+
+// This is here to prevent police from going ballistic on all nearby civs.
+@wrapMethod(GameObject)
+public final static func ChangeAttitudeToHostile(owner: wref<GameObject>,
+                                                 target: wref<GameObject>) -> Void {
+    let gi: GameInstance = GetGameInstance();
+    let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+    if psychoSys.isCyberpsychoEventInProgress()
+    && owner.IsPrevention()
+    && (target as ScriptedPuppet).IsCivilian() {
+        return;
+    };
+    wrappedMethod(owner, target);
+};
+
+@addMethod(GameInstance)
+public final static func GetRandomCyberpsychosSystem(self: GameInstance) -> ref<RandomCyberpsychosEventSystem> {
+    let container = GameInstance.GetScriptableSystemsContainer(self);
+    return container.Get(n"RandomCyberpsychosEventSystem") as RandomCyberpsychosEventSystem;
+};
+
+struct RandomCyberpsychosSpawnPointSearchParams {
+    let search_size: Float;
+    let sector_size: Float;
+    let deadzone: Float;
+}
+
+struct RandomCyberpsychosDistrictPoliceDelays {
+    let ncpdDelay: Int16;
+    let maxtacDelay: Int16;
+}
+
+/*
+struct RandomCyberpsychosDaemonEvent {
+    let sender: ref<RandomCyberpsychosDaemonEvent>;
+}
+*/
+struct RandomCyberpsychosEventRequest {//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+}
+
+struct RandomCyberpsychosPsychoAttachedEvent { //extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+    let cyberpsycho: ref<NPCPuppet>;
+    let isFirstAttach: Bool;
+}
+
+struct RandomCyberpsychosPsychoDetatchedEvent {//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+}
+struct RandomCyberpsychosEventStartedEvent {//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+    let psychoID: EntityID;
+    let isHeatActive: Bool;
+}
+
+struct RandomCyberpsychosNewTargetsRequestedEvent {//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+    let cyberpsycho: ref<NPCPuppet>;
+}
+
+struct RandomCyberpsychosPsychoCombatStartedEvent{//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+    let cyberpsycho: ref<NPCPuppet>;
+}
+
+struct RandomCyberpsychosGroundNCPDConvoyRequestedEvent {//extends RandomCyberpsychosDaemonEvent {
+}
+
+struct RandomCyberpsychosGroundNCPDConvoyVehicleAttachedEvent {//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+    let vehicleSquad: array<EntityID>;
+}
+
+struct RandomCyberpsychosGroundNCPDConvoyVehicleArrivedEvent {//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+    let vehicleSquad: array<EntityID>;
+}
+
+struct RandomCyberpsychosStartMaxtacAVRequest {//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayCallback>;
+}
+
+struct RandomCyberpsychosCyberpsychoDeathEvent {//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+    let cyberpsycho: ref<NPCPuppet>;
+}
+
+struct RandomCyberpsychosPlayerSecondsAwayEvent {//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+    let distance: Float;
+}
+
+struct RandomCyberpsychosUnitsDeletionRequestedEvent {//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+    let units: array<EntityID>;
+    let allUnitsDeleted: Bool;
+}
+
+struct StartRandomCyberpsychosDaemonEvent {//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+}
+
+struct RandomCyberpsychosGroundNCPDLeaveRequestedEvent {//extends RandomCyberpsychosDaemonEvent {
+    let sender: ref<DelayDaemon>;
+}
+
+/*
+class RandomCyberpsychosDaemon extends DelayCallback {
+    let gi: GameInstance;
+    let delayID: DelayID;
+    let isActive: Bool = false;
+    let delay: Float = 1.00;
+    let isAffectedByTimeDilation: Bool = false;
+
+    func Start(gi: GameInstance, delay: Float, opt isAffectedByTimeDilation: Bool) -> Void {
+        if this.IsActive() {
+            return;
+        };
+
+        this.gi = gi;
+        this.delay = delay;
+        this.isAffectedByTimeDilation = isAffectedByTimeDilation;
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        let cback_ID = delaySys.DelayCallback(this,
+                                              delay,
+                                              isAffectedByTimeDilation);
+        this.delayID = cback_ID;
+        this.isActive = true;
+    };
+
+    func Stop() -> Void {
+        if !this.IsActive() {
+            return;
+        };
+
+        let delaySys = GameInstance.GetDelaySystem(this.gi);
+        delaySys.CancelCallback(this.delayID);
+        this.isActive = false;
+    };
+
+    func IsActive() -> Bool {
+        return this.isActive;
+    };
+
+    func Repeat() -> Void {
+        if !this.IsActive() {
+            return;
+        };
+        let delaySys = GameInstance.GetDelaySystem(this.gi);
+        this.delayID = delaySys.DelayCallback(this,
+                                              this.delay,
+                                              this.isAffectedByTimeDilation);
+    };
+}
+*/
+
+class RandomCyberpsychosEventStarterDaemon extends DelayDaemon {
+
+    func Call() -> Void {
+        let psychoSys = GameInstance.GetRandomCyberpsychosSystem(this.gi);
+        let delaySys = GameInstance.GetDelaySystem(this.gi);
+        if psychoSys.TryStartNewCyberpsychoEvent() {
+            this.Stop();
+        } else {
+            this.Repeat();
+        };
+    };
+}
+
+class UpdateRandomCyberpsychosCyberpsychoAttachmentDaemon extends DelayDaemon {
+    let cyberpsychoID: EntityID;
+    let wasPsychoAttached: Bool = false;
+    let isFirstAttach: Bool = true;
+
+    func Call() -> Void {
+        let psychoSys = GameInstance.GetRandomCyberpsychosSystem(this.gi);
+        let delaySys = GameInstance.GetDelaySystem(this.gi);
+        let cback_ID: DelayID;
+        let psycho = (GameInstance.FindEntityByID(this.gi, this.cyberpsychoID) as NPCPuppet);
+        if !IsDefined(psycho) || !psycho.IsAttached() {
+            if this.wasPsychoAttached {
+                let evt = new RandomCyberpsychosPsychoDetatchedEvent(this);
+                evt.sender = this;
+                psychoSys.OnCyberpsychoDetached(evt);
+                this.wasPsychoAttached = false;
+            };
+        } else {
+            if !this.wasPsychoAttached {
+                let evt = new RandomCyberpsychosPsychoAttachedEvent(this,
+                                                                    psycho,
+                                                                    this.isFirstAttach);
+                evt.sender = this;
+                psychoSys.OnCyberpsychoAttached(evt);
+
+                this.isFirstAttach = false;
+                this.wasPsychoAttached = true;
+            };
+        };
+        this.Repeat();
+    };
+}
+
+class UpdateRandomCyberpsychosTargetsDaemon extends DelayDaemon {
+    let cyberpsycho: ref<NPCPuppet>;
+
+    func Call() -> Void {
+        let psychoSys = GameInstance.GetRandomCyberpsychosSystem(this.gi);
+        let delaySys = GameInstance.GetDelaySystem(this.gi);
+        let player = GetPlayer(this.gi);
+        let psycho = this.cyberpsycho;
+        let evt = new RandomCyberpsychosNewTargetsRequestedEvent(this,
+                                                                 this.cyberpsycho);
+        psychoSys.SetupNearbyCrowdForCyberpsychoCombat(evt);
+        this.Repeat();
+    };
+
+}
+
+class RandomCyberpsychosPsychoCombatStartedDaemon extends DelayDaemon {
+    let cyberpsycho: ref<NPCPuppet>;
+
+    func Call() -> Void {
+        /* Trying to access NpcStateComponent will crash game if the
+           NPC is not attached. */
+        if this.cyberpsycho.IsAttached() {
+            let psychoStatesComp = this.cyberpsycho.GetStatesComponent();
+            let upper_body = psychoStatesComp.GetCurrentUpperBodyState();
+
+            // TODO add grenade throw by wrapping AIThrowGrenade
+            if Equals(upper_body, gamedataNPCUpperBodyState.Attack)
+            || Equals(upper_body, gamedataNPCUpperBodyState.ChargedAttack)
+            || this.HasCyberpsychoWeaponBeenFired() {
+                let psychoSys = GameInstance.GetRandomCyberpsychosSystem(this.gi);
+                let evt = new RandomCyberpsychosPsychoCombatStartedEvent(this, this.cyberpsycho);
+                psychoSys.OnCyberpsychoCombatStarted(evt);
+            };
+        };
+        this.Repeat();
+    };
+
+    func HasCyberpsychoWeaponBeenFired() -> Bool {
+        return IsDefined(GameObject.GetActiveWeapon(this.cyberpsycho))
+        && GameObject.GetActiveWeapon(this.cyberpsycho).GetMagazinePercentage() < 1.00
+        && GameObject.GetActiveWeapon(this.cyberpsycho).GetMagazinePercentage() >= 0.00;
+    };
+}
+
+class RandomCyberpsychosPsychoDeathDaemon extends DelayDaemon { // hell yea brother
+    let cyberpsycho: ref<NPCPuppet>;
+
+    func Call() -> Void {
+        let psychoSys = GameInstance.GetRandomCyberpsychosSystem(this.gi);
+        let delaySys = GameInstance.GetDelaySystem(this.gi);
+        if this.cyberpsycho.IsDead()
+        || ScriptedPuppet.IsDefeated(this.cyberpsycho)
+        || ScriptedPuppet.IsUnconscious(this.cyberpsycho) {
+            let evt = new RandomCyberpsychosCyberpsychoDeathEvent(this, this.cyberpsycho);
+            psychoSys.OnCyberpsychoIsDead(evt);
+        };
+
+        this.Repeat();
+    };
+}
+
+class RandomCyberpsychosPlayerSecondsAwayDaemon extends DelayDaemon {
+    let psycho_detatched_pos: Vector4;
+
+    func Call() -> Void {
+        let psychoSys = GameInstance.GetRandomCyberpsychosSystem(this.gi);
+        let delaySys = GameInstance.GetDelaySystem(this.gi);
+        let player_pos = GetPlayer(this.gi).GetWorldPosition();
+        let distance = Vector4.DistanceSquared(player_pos, this.psycho_detatched_pos);
+        if distance > 5625.00 { // > 75m
+            let evt = new RandomCyberpsychosPlayerSecondsAwayEvent(this, distance);
+            evt.sender = this;
+            psychoSys.OnPlayerSecondAway(evt);
+        };
+        this.Repeat();
+    };
+}
+
+class RandomCyberpsychosNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
+    let units: array<array<EntityID>>;
+
+    func Call() -> Void {
+        LogChannel(n"DEBUG", s"DELETION DAEMON UNITS: \(this.units)");
+        LogChannel(n"DEBUG", s"DELETION DAEMON UNITS SIZE: \(ArraySize(this.units))");
+        let psychoSys = GameInstance.GetRandomCyberpsychosSystem(this.gi);
+        let units_to_delete: array<EntityID>;
+        let player: ref<PlayerPuppet> = GetPlayer(this.gi);
+        let player_pos: Vector4 = player.GetWorldPosition();
+        let i = 0;
+        while i < ArraySize(this.units) {
+            let ii = 0;
+            while ii < ArraySize(this.units[i]) {
+                let unitID = this.units[i][ii];
+                let unit: wref<Entity> = GameInstance.FindEntityByID(this.gi,
+                                                                     unitID);
+                let unit_pos = unit.GetWorldPosition();
+                // the Distance check below is because some units do not detach
+                // for some reason even though they're very far from the player.
+                if !IsDefined(unit)
+                || !unit.IsAttached()
+                || Vector4.DistanceSquared(player_pos, unit_pos) > 62500.00 {
+                    LogChannel(n"DEBUG", "ADDING UNIT TO DELETION LIST");
+                    ArrayPush(units_to_delete, unitID);
+                    ArrayRemove(this.units[i], unitID);
+                };
+                ii += 1;
+            };
+
+            if ArraySize(this.units[i]) == 0 {
+                ArrayRemove(this.units, this.units[i]);
+            };
+
+            i += 1;
+        };
+
+        if ArraySize(units_to_delete) > 0 {
+            let all_units_deleted: Bool;
+            LogChannel(n"DEBUG", s"DELETING UNITS: \(units_to_delete)");
+            if ArraySize(this.units) == 0 {
+                all_units_deleted = true;
+                LogChannel(n"DEBUG", s"ALL UNITS DELETED");
+            };
+            let evt = new RandomCyberpsychosUnitsDeletionRequestedEvent(this,
+                                                                        units_to_delete,
+                                                                        all_units_deleted);
+            evt.sender = this;
+            psychoSys.OnGroundNCPDUnitsDeletionRequested(evt);
+        };
+        this.Repeat();
+    };
+
+}
+
+class RandomCyberpsychosLastEncounterSecondsDaemon extends DelayDaemon {
+    let timeBetweenCalls: Float;
+
+    func Start(gi: GameInstance, delay: Float, opt isAffectedByTimeDilation: Bool) -> Void {
+        LogChannel(n"DEBUG", s"TIME BETWEEN CYBERPSYCHO LAST ENCOUNTER CALLS: \(delay)");
+        this.timeBetweenCalls = delay;
+        super.Start(gi, delay, isAffectedByTimeDilation);
+    };
+
+    func Call() -> Void {
+        let psychoSys = GameInstance.GetRandomCyberpsychosSystem(this.gi);
+        let delaySys = GameInstance.GetDelaySystem(this.gi);
+        let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
+        let cooldown_seconds = psychoSys.GetCooldownSeconds();
+        LogChannel(n"DEBUG", s"TIME BETWEEN CALLS: \(this.timeBetweenCalls)");
+        psychoSys.AddlastEncounterSeconds(Cast<Uint32>(this.timeBetweenCalls));
+        LogChannel(n"DEBUG", s"SECONDS:\(psychoSys.lastEncounterSeconds)");
+        LogChannel(n"DEBUG", s"COOLDOWN SECONDS:\(cooldown_seconds)");
+        if psychoSys.lastEncounterSeconds > cooldown_seconds
+        && psychoSys.ShouldStartCyberpsychoEvent() {
+            let req = new RandomCyberpsychosEventRequest(this);
+            req.sender = this;
+            psychoSys.RequestStartCyberpsychoEvent(req);
+        };
+        this.Repeat();
+    };
+}
+
+class RandomCyberpsychosDelayPreventionSystemEnabledCallback extends DelayCallback {
+
+    func Call() -> Void {
+        let gi: GameInstance = GetGameInstance();
+        let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
+        let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
+        preventionSys.TogglePreventionSystem(true);
+    };
+}
+
+class RandomCyberpsychosConvoyVehicleAttachmentDaemon extends DelayDaemon {
+    let vehicleSquad: array<EntityID>;
+    let isAttached: Bool = false;
+
+    func Call() -> Void {
+        let gi: GameInstance = GetGameInstance();
+        let vehicleID = this.vehicleSquad[0];
+        let veh_obj = GameInstance.FindEntityByID(gi, vehicleID) as WheeledObject;
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+        let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
+        let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
+        if !IsDefined(veh_obj) {
+            this.Repeat();
+            return;
+        };
+        let evt = new RandomCyberpsychosGroundNCPDConvoyVehicleAttachedEvent(this, this.vehicleSquad);
+        psychoSys.OnGroundNCPDConvoyVehicleAttached(evt);
+    };
+}
+
+class StartRandomCyberpsychoGroundNCPDResponseCallback extends DelayCallback {
+
+    func Call() -> Void {
+        let gi: GameInstance = GetGameInstance();
+        let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+        psychoSys.TryStartGroundNCPDResponse();
+    };
+}
+
+class RandomCyberpsychosConvoyVehicleArrivalDaemon extends DelayDaemon  {
+    let cyberpsycho: ref<NPCPuppet>;
+    let vehicleSquad: array<EntityID>;
+
+    func Call() -> Void {
+        let gi: GameInstance = GetGameInstance();
+        let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        let vehID = this.vehicleSquad[0];
+        let veh_obj = GameInstance.FindEntityByID(gi, vehID) as VehicleObject;
+        let veh_pos = veh_obj.GetWorldPosition();
+        let psycho_pos = this.cyberpsycho.GetWorldPosition();
+        if IsDefined(veh_obj)
+        && Vector4.DistanceSquared(veh_pos, psycho_pos) < 5625.00 {
+            LogChannel(n"DEBUG", "CONVOY VEHICLE < 50 METERS, TRIGGERING ARRIVAL FUNC");
+            let evt = new RandomCyberpsychosGroundNCPDConvoyVehicleArrivedEvent(this, this.vehicleSquad);
+            evt.sender = this;
+            evt.vehicleSquad = this.vehicleSquad;
+            psychoSys.OnGroundNCPDVehicleHasArrived(evt);
+        };
+        this.Repeat();
+    };
+}
+
+class StartRandomCyberpsychosMaxtacAVResponseCallback extends DelayCallback {
+
+    func Call() -> Void {
+        let gi: GameInstance = GetGameInstance();
+        let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+        let evt = new RandomCyberpsychosStartMaxtacAVRequest(this);
+        psychoSys.SpawnMaxTacAV();
+    };
+}
+
+public class RandomCyberpsychosEventSystem extends ScriptableSystem {
+    let settings: ref<RandomCyberpsychosSettings>;
+
+    persistent let lastEncounterSeconds: Uint32;
+
+    let districtManager: ref<DistrictManager>;
+
+    let isCyberpsychoEventInProgress: Bool = false;
+
+    let playerSecondsAway: Uint16;
+
+    let playerCivsKilled: Uint8;
+
+    let playerCopsKilled: Uint8;
+
+    let playerCopHitCount: Uint8;
+
+    persistent let groundPoliceSquads: array<array<EntityID>>;
+
+    persistent let isUnitDeletionPending: Bool;
+
+    persistent let cyberpsychoID: EntityID;
+
+    let cyberpsychoMappinID: NewMappinID;
+
+    let cyberpsychoIsDead: Bool = false;
+
+    let isCyberpsychoCombatStarted: Bool = false;
+
+    let lastEncounterSecondsDaemon: ref<RandomCyberpsychosLastEncounterSecondsDaemon>;
+
+    let eventStarterDaemon: ref<RandomCyberpsychosEventStarterDaemon>;
+
+    let cyberpsychoDeathDaemon: ref<RandomCyberpsychosPsychoDeathDaemon>;
+
+    let cyberpsychoAttachmentDaemon: ref<UpdateRandomCyberpsychosCyberpsychoAttachmentDaemon>;
+
+    let cyberpsychoCombatStartedDaemon: ref<RandomCyberpsychosPsychoCombatStartedDaemon>;
+
+    let cyberpsychoTargetDaemon: ref<UpdateRandomCyberpsychosTargetsDaemon>;
+
+    let playerSecondsAwayDaemon: ref<RandomCyberpsychosPlayerSecondsAwayDaemon>;
+
+    private func OnAttach() -> Void {
+        //ModSettings.RegisterListenerToClass(this);
+        ModSettings.RegisterListenerToModifications(this);
+    };
+
+
+    private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
+        let gi: GameInstance = this.GetGameInstance();
+        this.settings = new RandomCyberpsychosSettings();
+        this.districtManager = GetDistrictManager();
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][OnRestored]: UNITS PENDING DELETION? \(this.isUnitDeletionPending)");
+        if this.isUnitDeletionPending {
+            let deletionDaemon = new RandomCyberpsychosNCPDGroundPoliceDeletionDaemon();
+            deletionDaemon.units = this.groundPoliceSquads;
+            deletionDaemon.Start(gi, 1.00, false);
+        };
+        if EntityID.IsDefined(this.cyberpsychoID) {
+            let psycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID);
+            LogChannel(n"DEBUG", "[RandomCyberpsychosEventSystem][OnRestored]: LEFTOVER PSYCHO DEFINED, CREATING ATTACHMENT DAEMON");
+            let attachmentDaemon = new UpdateRandomCyberpsychosCyberpsychoAttachmentDaemon();
+            attachmentDaemon.cyberpsychoID = this.cyberpsychoID;
+            attachmentDaemon.isFirstAttach = false;
+            attachmentDaemon.wasPsychoAttached = psycho.IsAttached();
+            attachmentDaemon.Start(gi, 0.10, false);
+            this.cyberpsychoAttachmentDaemon = attachmentDaemon;
+        };
+        this.StartNewMinutesSinceLastEncounterCallback(120.00);
+    };
+
+    private func OnDetatch() -> Void {
+    };
+
+    public cb func OnModSettingsChange() -> Void {
+        LogChannel(n"DEBUG", "ON MOD SETTINGS CHANGE");
+        this.settings = new RandomCyberpsychosSettings();
+        //this.OnCooldownMinutesChanged();
+        LogChannel(n"DEBUG", s"NEW MULT: \(this.settings.encounterMultiplier)");
+    };
+
+    func GetFrequencyMultiplier() -> Float {
+        LogChannel(n"DEBUG", s"FREQUENCY MULT: \(this.settings.encounterMultiplier)");
+        return this.settings.encounterMultiplier;
+    };
+
+    func OnFrequencyMultiplierChanged(new_val: Float) -> Void {
+        LogChannel(n"DEBUG", "CHANGING FREQ MULT");
+        //this.encounterMultiplier = new_val;
+        this.settings.encounterMultiplier = new_val;
+        LogChannel(n"DEBUG", s"NEW FREQ MULT: \(this.settings.encounterMultiplier)");
+    };
+
+    func GetEncounterMultiplier() -> Float {
+        if this.settings.encounterMultiplier == 0.00 {
+            return 1.00;
+        };
+
+        return this.settings.encounterMultiplier;
+    };
+
+    func GetCooldownSeconds() -> Uint32 {
+        if this.settings.cooldownMinutes == 0 {
+            return 300u;
+        };
+        return Cast<Uint32>(this.settings.cooldownMinutes) * 60u;
+    };
+
+    func GetCivilianClosestToCyberpsycho(cyberpsycho: ref<NPCPuppet>,
+                                         max_distance: Float) -> ref<Entity> {
+        let gi: GameInstance = this.GetGameInstance();
+        let cyberpsychoID = cyberpsycho.GetEntityID();
+        let psycho_pos = cyberpsycho.GetWorldPosition();
+        let psycho_xform = cyberpsycho.GetWorldTransform();
+
+        let psycho_front = (psycho_xform.GetForward() * max_distance);
+        let psycho_right = (psycho_xform.GetRight() * max_distance);
+        let psycho_front_left = (psycho_pos + psycho_front) - psycho_right;
+        let psycho_front_right = (psycho_pos + psycho_front) + psycho_right;
+        let psycho_back_left = (psycho_pos - psycho_front) - psycho_right;
+        let psycho_back_right = (psycho_pos - psycho_front) + psycho_right;
+        let query_box: array<Vector2> = [Vector4.Vector4To2(psycho_front_left),
+                                         Vector4.Vector4To2(psycho_front_right),
+                                         Vector4.Vector4To2(psycho_back_left),
+                                         Vector4.Vector4To2(psycho_back_right)];
+        let ents = GetEntitiesInPrism(query_box,
+                                        psycho_pos.Z - 20.00,
+                                        psycho_pos.Z + 20.00,
+                                        99999,
+                                        [n"ScriptedPuppet", n"vehicleCarBaseObject"]);
+        let closest_ent: wref<Entity>;
+        let closest_ent_distance: Float = 999999.00;
+        for e in ents {
+            let eID = e.GetEntityID();
+            if eID != cyberpsychoID && !(e as GameObject).IsPlayer() {
+                let this_ent_distance = Vector4.DistanceSquared(psycho_pos, e.GetWorldPosition());
+                let ent_as_puppet: wref<ScriptedPuppet> = (e as ScriptedPuppet);
+                let ent_as_car: wref<CarObject> = (e as CarObject);
+                if this_ent_distance < closest_ent_distance {
+                    if IsDefined(ent_as_puppet) && !ent_as_puppet.IsPlayer() && ent_as_puppet.IsActive() {
+                        closest_ent = e;
+                        closest_ent_distance = this_ent_distance;
+                    } else {
+                        if IsDefined(ent_as_car) {
+                            let passengers: array<wref<GameObject>>;
+                            VehicleComponent.GetAllPassengers(gi, eID, false, passengers);
+                            for p in passengers {
+                                if p.IsActive() {
+                                    closest_ent = p;
+                                    closest_ent_distance = this_ent_distance;
+                                    break;
+                               };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+
+        return closest_ent;
+    };
+
+    func RequestStartCyberpsychoEvent(req: RandomCyberpsychosEventRequest) -> Void {
+        let gi: GameInstance = this.GetGameInstance();
+        req.sender.Stop();
+        LogChannel(n"DEBUG", "[RandomCyberpsychosEventSystem][RequestStartCyberpsychoEvent]: EVENT REQUESTED");
+        let starter = new RandomCyberpsychosEventStarterDaemon();
+        starter.Start(gi, 1.00, false);
+    };
+
+    func TryStartNewCyberpsychoEvent() -> Bool {
+        LogChannel(n"DEBUG", "[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: STARTING NEW CYBERPSYCHO EVENT");
+        let gi: GameInstance = this.GetGameInstance();
+        let player = GetPlayer(gi);
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
+        let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
+        let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
+        let cyberpsychoSpec = this.GetCyberpsychoEntitySpec(district_name);
+        let center: Vector4 = player.GetWorldPosition();
+        let player_vehicle = player.GetMountedVehicle() as VehicleObject;
+        if this.isCyberpsychoEventInProgress {
+            LogChannel(n"WARN", "[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: TRIED TO START PSYCHO EVENT WHEN PSYCHO EVENT STILL IN PROGRESS");
+            return false;
+        };
+        if this.isUnitDeletionPending {
+            return false;
+        };
+
+        if IsDefined(player_vehicle) {
+            let speed = player_vehicle.GetCurrentSpeed();
+            LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: PLAYER IN MOVING VEHICLE, SPEED: \(speed))");
+            if speed > AbsF(0.01) {
+                /* GetCyberpsychoSpawnPoint calls
+                   AINavigationSystemd.FindPointInBoxForCharacter to find start
+                   points but the function will return all zero'd vectors if the
+                   player is in a car that's moving. */
+                return false;
+                //let offsetDist = LerpF(speed / 30.00, 20.00, 60.00, true);
+                //center = (center + offsetDist) * player_vehicle.GetWorldForward();
+            };
+        };
+
+        let psycho_spawn_point = this.getCyberpsychoSpawnPoint(center, district_name);
+        cyberpsychoSpec.position = psycho_spawn_point;
+        if Vector4.IsXYZZero(psycho_spawn_point) {
+            return false;
+        };
+
+        SaveLocksManager.RequestSaveLockAdd(gi, n"RandomCyberpsychosEventInProgress");
+        FastTravelSystem.AddFastTravelLock(n"RandomCyberpsychosEventInProgress", gi);
+        let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: DISTRICT: \(district_name)");
+
+
+        let attachmentDaemon = new UpdateRandomCyberpsychosCyberpsychoAttachmentDaemon();
+        let psychoID = this.SpawnCyberpsycho(cyberpsychoSpec);
+        attachmentDaemon.cyberpsychoID = psychoID;
+        this.cyberpsychoID = psychoID;
+        attachmentDaemon.Start(gi, 0.10, false);
+        this.cyberpsychoAttachmentDaemon = attachmentDaemon;
+        if Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
+            preventionSys.TogglePreventionSystem(false);
+        };
+        this.lastEncounterSecondsDaemon.Stop();
+        this.isCyberpsychoEventInProgress = true;
+        return true;
+    };
+
+    func SpawnCyberpsycho(psycho_spec: ref<DynamicEntitySpec>) -> EntityID {
+        let gi: GameInstance = this.GetGameInstance();
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        let dynamicEntSys = GameInstance.GetDynamicEntitySystem();
+        return dynamicEntSys.CreateEntity(psycho_spec);
+    };
+
+    func OnCyberpsychoFirstAttached(evt: RandomCyberpsychosPsychoAttachedEvent) -> Void {
+        let gi: GameInstance = this.GetGameInstance();
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        let cyberpsycho = evt.cyberpsycho;
+        let cyberpsycho_tt = cyberpsycho.GetTargetTrackerComponent();
+        this.cyberpsychoIsDead = false;
+        cyberpsycho_tt.SetThreatBaseMul(GetPlayer(gi), 5.00);
+        NPCPuppet.ChangeHighLevelState(cyberpsycho,
+                                       gamedataNPCHighLevelState.Alerted);
+        StimBroadcasterComponent.BroadcastStim(cyberpsycho,
+                                               gamedataStimType.SpreadFear,
+                                               10.00);
+        let closest_ent = this.GetCivilianClosestToCyberpsycho(evt.cyberpsycho, 30.00);
+        let closest_as_veh = closest_ent as VehicleObject;
+        if IsDefined(closest_as_veh) {
+            this.SetupCrowdVehiclePassengersForPsychoCombat(closest_as_veh,
+                                                            evt.cyberpsycho,
+                                                            false);
+        } else {
+            let closest_as_puppet = closest_ent as ScriptedPuppet;
+            if IsDefined(closest_as_puppet) {
+                closest_as_puppet.GetSensesComponent().IgnoreLODChange(true);
+                this.TrySettingUpCrowdEntityForPsychoCombat(closest_as_puppet,
+                                                            cyberpsycho,
+                                                            false);
+                TargetTrackingExtension.InjectThreat(cyberpsycho,
+                                                      closest_ent,
+                                                      0.01,
+                                                      -1.00);
+            };
+        };
+        let psychoDeathDaemon = new RandomCyberpsychosPsychoDeathDaemon();
+        psychoDeathDaemon.cyberpsycho = evt.cyberpsycho;
+        psychoDeathDaemon.Start(gi, 1.00, true);
+
+        let psychoTargetsDaemon = new UpdateRandomCyberpsychosTargetsDaemon();
+        psychoTargetsDaemon.cyberpsycho = evt.cyberpsycho;
+        this.cyberpsychoTargetDaemon = psychoTargetsDaemon;
+        psychoTargetsDaemon.Start(gi, 0.10, false);
+
+        let psychoCombatDaemon = new RandomCyberpsychosPsychoCombatStartedDaemon();
+        psychoCombatDaemon.cyberpsycho = evt.cyberpsycho;
+        psychoCombatDaemon.Start(gi, 0.10, true);
+        this.cyberpsychoMappinID = this.RegisterPsychoMappin(evt.cyberpsycho);
+    };
+
+    func RegisterPsychoMappin(cyberpsycho: ref<NPCPuppet>) -> NewMappinID {
+        let mappinSys = GameInstance.GetMappinSystem(this.GetGameInstance());
+        let pin_data = new MappinData();
+        let dummy_v3: Vector3;
+        pin_data.mappinType = t"Mappins.RandomCyberpsychos_Psycho_Mappin_Definition";
+        pin_data.variant = gamedataMappinVariant.HuntForPsychoVariant;
+        pin_data.active = true;
+        pin_data.visibleThroughWalls = true;
+        return mappinSys.RegisterMappinWithObject(pin_data,
+                                                  cyberpsycho,
+                                                  n"roleMappin",
+                                                  dummy_v3);
+    };
+
+    func OnCyberpsychoAttached(evt: RandomCyberpsychosPsychoAttachedEvent) -> Void {
+        LogChannel(n"DEBUG", "[RandomCyberpsychosEventSystem][OnCyberpsychoAttached]: CYBERPSYCHO ATTACHED");
+        if evt.isFirstAttach {
+            this.OnCyberpsychoFirstAttached(evt);
+        };
+        let gi: GameInstance = this.GetGameInstance();
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        this.cyberpsychoTargetDaemon.Start(this.GetGameInstance(), 0.10, false);
+        // Use the regular stealth loot icon if the psycho is defeated.
+        if !this.isCyberpsychoDefeated() {
+            this.cyberpsychoMappinID = this.RegisterPsychoMappin(evt.cyberpsycho);
+        };
+        this.playerSecondsAway = Cast<Uint16>(0u);
+    };
+
+    func StartPsychoCombatWithNearbyPreventionUnits(cyberpsycho: ref<NPCPuppet>) -> Void {
+        let magnitude = 150.00;
+        let psycho_xform = cyberpsycho.GetWorldTransform();
+        let psycho_pos = psycho_xform.GetWorldPosition().ToVector4();
+        let psycho_front = (psycho_xform.GetForward() * magnitude);
+        let psycho_right = (psycho_xform.GetRight() * magnitude);
+        let psycho_front_left = (psycho_pos + psycho_front) - psycho_right;
+        let psycho_front_right = (psycho_pos + psycho_front) + psycho_right;
+        let psycho_back_left = (psycho_pos - psycho_front) - psycho_right;
+        let psycho_back_right = (psycho_pos - psycho_front) + psycho_right;
+        let query_box: array<Vector2> = [Vector4.Vector4To2(psycho_front_left),
+                                         Vector4.Vector4To2(psycho_front_right),
+                                         Vector4.Vector4To2(psycho_back_left),
+                                         Vector4.Vector4To2(psycho_back_right)];
+
+        let ents = GetEntitiesInPrism(query_box,
+                                        psycho_pos.Z - 20.00,
+                                        psycho_pos.Z + 20.00,
+                                        99999,
+                                        [n"ScriptedPuppet"]);
+        for e in ents {
+            let e_as_veh: wref<VehicleObject> = e as VehicleObject;
+            if IsDefined(e_as_veh) {
+                this.SetupCrowdVehiclePassengersForPsychoCombat(e_as_veh,
+                                                                cyberpsycho,
+                                                                true);
+            } else {
+                this.TrySettingUpPreventionPuppetForCyberpsychoCombat((e as ScriptedPuppet),
+                                                                      cyberpsycho);
+            };
+        };
+    };
+
+    func OnCyberpsychoCombatStarted(evt: RandomCyberpsychosPsychoCombatStartedEvent) -> Void {
+        let gi: GameInstance = this.GetGameInstance();
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        let cyberpsycho = evt.cyberpsycho;
+        let psychoStimBroadcaster = cyberpsycho.GetStimBroadcasterComponent();
+        /* This is here so crowd traffic vehicles will enter panic driving.
+           For some strange reason they don't enter panic driving for combat
+           or terror stim. */
+        evt.sender.Stop();
+        psychoStimBroadcaster.AddActiveStimuli(cyberpsycho,
+                                               gamedataStimType.VehicleHit,
+                                               -1.00,
+                                               150.00);
+        StimBroadcasterComponent.BroadcastStim(cyberpsycho,
+                                               gamedataStimType.Terror,
+                                               150.00);
+        this.StartPsychoCombatWithNearbyPreventionUnits(cyberpsycho);
+        this.isCyberpsychoCombatStarted = true;
+        let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
+        let response_delays = this.GetCyberpsychoPoliceResponseDelays(district_name);
+        if response_delays.ncpdDelay != Cast<Int16>(-1) {
+            let ncpdResponseCback = new StartRandomCyberpsychoGroundNCPDResponseCallback();
+            LogChannel(n"WARN", s"[RandomCyberpsychosEventSystem][OnCyberpsychoCombatStarted]: QUEUED POLICE CONVOY RESPONSE IN \(response_delays) SECONDS");
+            let ncpd_delay = Cast<Float>(response_delays.ncpdDelay);
+            let cback_ID = delaySys.DelayCallback(ncpdResponseCback,
+                                                  ncpd_delay,
+                                                  true);
+        };
+
+        if response_delays.maxtacDelay != Cast<Int16>(-1) {
+            let maxtacResponseCback = new StartRandomCyberpsychosMaxtacAVResponseCallback();
+            LogChannel(n"WARN", s"[RandomCyberpsychosEventSystem][OnCyberpsychoCombatStarted]: QUEUED MAXTAC AV RESPONSE IN \(response_delays) SECONDS");
+            let maxtac_delay = Cast<Float>(response_delays.maxtacDelay);
+            let cback_ID = delaySys.DelayCallback(maxtacResponseCback,
+                                                  maxtac_delay,
+                                                  true);
+        };
+    };
+
+    func OnCyberpsychoDetached(evt: RandomCyberpsychosPsychoDetatchedEvent) -> Void {
+        LogChannel(n"DEBUG", "[RandomCyberpsychosEventSystem][OnCyberpsychoDetatched]: CYBERPSYCHO DETATCHED");
+        let gi: GameInstance = this.GetGameInstance();
+        let mappinSys = GameInstance.GetMappinSystem(gi);
+        this.cyberpsychoTargetDaemon.Stop();
+        let gi: GameInstance = this.GetGameInstance();
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        let playerSecondsAwayDaemon = new RandomCyberpsychosPlayerSecondsAwayDaemon();
+        this.playerSecondsAwayDaemon = playerSecondsAwayDaemon;
+        this.playerSecondsAwayDaemon.psycho_detatched_pos = GetPlayer(gi).GetWorldPosition();
+        this.playerSecondsAwayDaemon.Start(gi, 1.00, true);
+    };
+
+    func CanEntityBeSetupForPsychoCombat(e: wref<Entity>,
+                                         cyberpsycho: ref<ScriptedPuppet>) -> Bool {
+        if !IsDefined(e) {
+            return false;
+        };
+
+        return !(e as ScriptedPuppet).GetSensesComponent().IsEnabled()
+        && e.IsAttached()
+        && !(e as ScriptedPuppet).IsDead()
+        && !(e as GameObject).IsPlayer()
+        && !(e as GameObject).IsPrevention()
+        && !(e as ScriptedPuppet).IsCharacterChildren()
+        && ((e as ScriptedPuppet).IsCivilian() || (e as ScriptedPuppet).IsCrowd());
+    };
+
+    func TrySettingUpCrowdEntityForPsychoCombat(e: wref<ScriptedPuppet>,
+                                                cyberpsycho: ref<ScriptedPuppet>,
+                                                shouldWakeUpPrevention: Bool,
+                                                opt GroundPoliceConvoy: array<array<EntityID>>) -> Bool {
+
+        if !IsDefined(e) {
+            return false;
+        };
+
+        if shouldWakeUpPrevention
+        && this.TrySettingUpPreventionPuppetForCyberpsychoCombat(e,
+                                                                 cyberpsycho,
+                                                                 GroundPoliceConvoy) {
+            return true;
+        };
+
+        if !this.CanEntityBeSetupForPsychoCombat(e, cyberpsycho) {
+            return false;
+        };
+
+        let psychoSenseComp = cyberpsycho.GetSensesComponent();
+        let entSenseComp = e.GetSensesComponent();
+        let eID: EntityID = e.GetEntityID();
+        entSenseComp.Toggle(true);
+        entSenseComp.ToggleComponent(true);
+        entSenseComp.IgnoreLODChange(true);
+        psychoSenseComp.SetDetectionMultiplier(eID, 9999.00);
+        return true;
+    };
+
+    func TrySettingUpPreventionPuppetForCyberpsychoCombat(e: wref<ScriptedPuppet>,
+                                                          cyberpsycho: ref<ScriptedPuppet>,
+                                                          opt groundPoliceConvoy: array<array<EntityID>>) -> Bool {
+            if !IsDefined(e) || !(e as ScriptedPuppet).IsPrevention() {
+                return false;
+            };
+            let gi: GameInstance = this.GetGameInstance();
+            let entID = e.GetEntityID();
+            let eSenseComp = e.GetSensesComponent();
+            let psychoID = cyberpsycho.GetEntityID();
+            if this.isEntityPartOfGroundPoliceSquad(entID, groundPoliceConvoy) {
+                return false;
+            };
+
+            eSenseComp.SetDetectionMultiplier(psychoID, 100.00);
+            TargetTrackingExtension.InjectThreat(e, cyberpsycho, 1.00, -1.00);
+            return true;
+    };
+
+    func SetupNearbyCrowdForCyberpsychoCombat(evt: RandomCyberpsychosNewTargetsRequestedEvent) -> Void {
+        if !IsDefined(evt.cyberpsycho) || !evt.cyberpsycho.IsAttached() {
+            return;
+        };
+
+        let ents: array<wref<Entity>>;
+        let attempts = 0;
+        let magnitude: Float = 50.00;
+        let psycho_xform = evt.cyberpsycho.GetWorldTransform();
+        let psycho_pos = psycho_xform.GetWorldPosition().ToVector4();
+        let psycho_front = (psycho_xform.GetForward() * magnitude);
+        let psycho_right = (psycho_xform.GetRight() * magnitude);
+        let psycho_front_left = (psycho_pos + psycho_front) - psycho_right;
+        let psycho_front_right = (psycho_pos + psycho_front) + psycho_right;
+        let psycho_back_left = (psycho_pos - psycho_front) - psycho_right;
+        let psycho_back_right = (psycho_pos - psycho_front) + psycho_right;
+        let query_box: array<Vector2> = [Vector4.Vector4To2(psycho_front_left),
+                                         Vector4.Vector4To2(psycho_front_right),
+                                         Vector4.Vector4To2(psycho_back_left),
+                                         Vector4.Vector4To2(psycho_back_right)];
+
+        let ents = GetEntitiesInPrism(query_box,
+                                        psycho_pos.Z - 20.00,
+                                        psycho_pos.Z + 20.00,
+                                        99999,
+                                        [n"ScriptedPuppet", n"vehicleCarBaseObject"]);
+        for e in ents {
+            let e_as_car: wref<VehicleObject> = (e as VehicleObject);
+            let e_as_puppet: wref<ScriptedPuppet> = (e as ScriptedPuppet);
+            if IsDefined(e_as_puppet) {
+                this.TrySettingUpCrowdEntityForPsychoCombat(e_as_puppet,
+                                                            evt.cyberpsycho,
+                                                            this.isCyberpsychoCombatStarted,
+                                                            this.groundPoliceSquads);
+            } else {
+
+                if IsDefined(e_as_car) {
+                    this.SetupCrowdVehiclePassengersForPsychoCombat(e_as_car,
+                                                                    evt.cyberpsycho,
+                                                                    this.isCyberpsychoCombatStarted,
+                                                                    this.groundPoliceSquads);
+                };
+            };
+        };
+    };
+
+    func SetupCrowdVehiclePassengersForPsychoCombat(veh: wref<VehicleObject>,
+                                                    psycho: ref<ScriptedPuppet>,
+                                                    isCyberpsychoCombatStarted: Bool,
+                                                    opt groundPoliceSquads: array<array<EntityID>>) -> Void {
+        if !IsDefined(veh) || !veh.IsAttached() || !veh.IsDestroyed() {
+            return;
+        };
+
+        let gi: GameInstance = this.GetGameInstance();
+        let vehID: EntityID = veh.GetEntityID() ;
+        let veh_pos: Vector4 = veh.GetWorldPosition();
+        let passengers: array<wref<GameObject>>;
+        let psycho_pos: Vector4 = psycho.GetWorldPosition();
+        let square_psycho_dist: Float = Vector4.DistanceSquared(psycho_pos,
+                                                                veh_pos);
+        let should_exit: Bool = (isCyberpsychoCombatStarted
+                                 && RandRange(0, 2) == 1
+                                 && veh.GetCurrentSpeed() < 5.00
+                                 && square_psycho_dist < 225.00);
+
+        VehicleComponent.GetAllPassengers(gi, vehID, false, passengers);
+        for p in passengers {
+            this.TrySettingUpCrowdEntityForPsychoCombat((p as ScriptedPuppet),
+                                                        psycho,
+                                                        isCyberpsychoCombatStarted,
+                                                        groundPoliceSquads);
+            /* Force some nearby car passengers to exit vehicles
+               to prevent large amounts of panic driving vehicles,
+               which cause lots of car explosions and pile-ups and
+               is just generally annoying. */
+            if should_exit {
+                let exitEvt = new VehicleUnableToStartPanicDriving();
+                exitEvt.forceExitVehicle = true;
+                veh.OnUnableToStartPanicDriving(exitEvt);
+            };
+            /* A lower threat mult is set for vehicle passengers since the 
+               cyberpsycho tends to not aim high enough to actually hit the
+               passenger and subsequenty gets stuck on them. This makes it more
+               likely that the cyberpsycho will prefer on foot NPCs. */
+            psycho.GetTargetTrackerComponent().SetThreatBaseMul(p, 0.25);
+        };
+    };
+
+    func FindNCPDGroundConvoySpawnpoints(cyberpsycho: ref<NPCPuppet>,
+                                         veh_fwd: Vector4,
+                                         out spawn_points: array<Vector4>) -> Bool {
+        let NavSys = GameInstance.GetNavigationSystem(this.GetGameInstance());
+        let psycho_pos: Vector4 = cyberpsycho.GetWorldPosition();
+        let start_pos: Vector4;
+        let pursuit_points: array<Vector4>;
+        let fallback_pursuit_points: array<Vector4>;
+        let zero_v4: Vector4;
+        let vehicleNavAgentSize = IntEnum<NavGenAgentSize>(1);
+        let success = NavSys.FindPursuitPointsRange(psycho_pos,
+                                                    psycho_pos,
+                                                    zero_v4,
+                                                    30.00,
+                                                    120.00,
+                                                    1,
+                                                    false,
+                                                    vehicleNavAgentSize,
+                                                    pursuit_points,
+                                                    fallback_pursuit_points);
+        let i = 0;
+
+        if !success {
+            return false;
+        };
+
+        start_pos = pursuit_points[0];
+        if Vector4.IsXYZZero(start_pos) {
+            LogChannel(n"WARN", "[RandomCyberpsychosEventSystem][FindNCPDGroundConvoySpawnpoints]: FAILED TO FIND GROUND CONVOY SPAWNPOINT: PURSUIT POINT VECTOR IS ZERO");
+            return false;
+        };
+        while i < 3 {
+            let iF: Float = Cast<Float>(i);
+            let distance = new Vector4(-veh_fwd.X + (7.00 * iF),
+                                       -veh_fwd.Y + (7.00 * iF),
+                                       veh_fwd.Z,
+                                       1.00);
+            let pos = start_pos + distance;
+            ArrayPush(spawn_points, pos);
+            i += 1;
+        };
+
+        return true;
+    };
+
+    func TryStartGroundNCPDResponse() -> Bool {
+        if this.isCyberpsychoDefeated() {
+            return false;
+        };
+        let gi: GameInstance = this.GetGameInstance();
+        let dynamicEntSys = GameInstance.GetDynamicEntitySystem();
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        let MountingFacility = GameInstance.GetMountingFacility(gi);
+        let NavSys = GameInstance.GetNavigationSystem(gi);
+        let groundPoliceSquadsEntitySpecs = this.GetCyberpsychoGroundPoliceEntitySpecs();
+        let groundPoliceSquads: array<array<EntityID>>;
+        let vehicle_recordID = groundPoliceSquadsEntitySpecs[0][0].recordID;
+        let veh_TDBID = TweakDBInterface.GetRecord(vehicle_recordID);
+        let veh_record = veh_TDBID as Vehicle_Record;
+        let veh_data_package = veh_record.VehDataPackage();
+        let vehicle_seats: array<wref<VehicleSeat_Record>>;
+        let veh_fwd = groundPoliceSquadsEntitySpecs[0][0].orientation.GetForward();
+        let cyberpsycho = GameInstance.FindEntityByID(this.GetGameInstance(),
+                                                      this.cyberpsychoID) as NPCPuppet;
+        let psycho_pos: Vector4 = cyberpsycho.GetWorldPosition();
+        let spawn_points: array<Vector4>;
+        if this.isCyberpsychoDefeated() {
+            return false;
+        };
+
+        if !this.FindNCPDGroundConvoySpawnpoints(cyberpsycho,
+                                                 veh_fwd,
+                                                 spawn_points) {
+            LogChannel(n"WARN", "[RandomCyberpsychosEventSystem][TryStartGroundNCPDResponse]: FAILED TO FIND GROUND PURSUIT VEHICLE POINT, FALLING BACK TO ON FOOT UNITS");
+            if this.TryCreateGroundNCPDFallbackUnits(cyberpsycho,
+                                                     groundPoliceSquadsEntitySpecs,
+                                                     groundPoliceSquads) {
+                this.groundPoliceSquads = groundPoliceSquads;
+                return true;
+            };
+        };
+
+        veh_data_package.VehSeatSet().VehSeats(vehicle_seats);
+
+        // For some reason the hellhound data package only contains the two
+        // front seats even though it has two back seats.
+        if StrContains(NameToString(veh_record.DisplayName()), "Hellhound") {
+            ArrayPush(vehicle_seats,
+                      TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatBackLeft"));
+            ArrayPush(vehicle_seats,
+                      TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatBackRight"));
+        };
+
+        // We remove the driver seat record so a driver does not spawn in order
+        // to workaround an issue where spawining a driver cancels the drive to
+        // point command.
+        ArrayRemove(vehicle_seats,
+                    TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatFrontLeft"));
+
+        let i: Int32 = 0;
+        while i < ArraySize(groundPoliceSquadsEntitySpecs) {
+            let cur_vehicle_entity_IDs: array<EntityID>;
+            let cur_vehicle_spec = groundPoliceSquadsEntitySpecs[i][0];
+            let veh_fwd = cur_vehicle_spec.orientation.GetForward();
+            let distance = new Vector4(-veh_fwd.X + (7.00 * Cast<Float>(i)),
+                                       -veh_fwd.Y + (7.00 * Cast<Float>(i)),
+                                       veh_fwd.Z,
+                                       1);
+            let veh_pos = spawn_points[i] + distance;
+            cur_vehicle_spec.position = veh_pos;
+            let vehID = dynamicEntSys.CreateEntity(cur_vehicle_spec);
+            ArrayPush(cur_vehicle_entity_IDs, vehID);
+            let ii: Int32 = 0;
+            while ii < ArraySize(vehicle_seats) {
+                let s = vehicle_seats[ii];
+
+                // this startes at 1 because item 0 is the vehicle
+                // and this loop is solely for passengers
+                let passenger = groundPoliceSquadsEntitySpecs[i][ii + 1];
+                passenger.position = veh_pos;
+                let npcID = dynamicEntSys.CreateEntity(passenger);
+                ArrayPush(cur_vehicle_entity_IDs, npcID);
+                MountEntityToVehicle(npcID, vehID, s, true, false, true);
+                ii = ii + 1;
+            };
+            let attachmentDaemon = new RandomCyberpsychosConvoyVehicleAttachmentDaemon();
+            attachmentDaemon.vehicleSquad = cur_vehicle_entity_IDs;
+            attachmentDaemon.Start(gi, 0.50, false);
+            ArrayPush(groundPoliceSquads, cur_vehicle_entity_IDs);
+            i = i + 1;
+        };
+        this.groundPoliceSquads = groundPoliceSquads;
+        return true;
+    };
+
+    func TryCreateGroundNCPDFallbackUnits(cyberpsycho: ref<NPCPuppet>,
+                                       groundPoliceSquadsEntitySpecs: array<array<ref<DynamicEntitySpec>>>,
+                                       out groundPoliceSquads: array<array<EntityID>>) -> Bool {
+        let NavSys = GameInstance.GetNavigationSystem(this.GetGameInstance());
+        let dynamicEntSys = GameInstance.GetDynamicEntitySystem();
+        let psycho_pos = cyberpsycho.GetWorldPosition();
+        let i = 0;
+        while i < ArraySize(groundPoliceSquadsEntitySpecs) {
+            let squadIDs: array<EntityID>;
+            let squadSpecs = groundPoliceSquadsEntitySpecs[i];
+            // these start at 1 since the first spec is a vehicle spec
+            // but the fallback is for human NPCs only.
+            let ii = 1;
+            let squad_point_array: array<Vector4>;
+            let fallback_squad_point_array: array<Vector4>;
+            let dummy_v4: Vector4;
+            let pursuit_points_success = NavSys.FindPursuitPointsRange(psycho_pos,
+                                                                       psycho_pos,
+                                                                       dummy_v4,
+                                                                       15.00,
+                                                                       50.00,
+                                                                       1,
+                                                                       false,
+                                                                       NavGenAgentSize.Human,
+                                                                       squad_point_array,
+                                                                       fallback_squad_point_array);
+            let squad_point: Vector4;
+            if ArraySize(squad_point_array) > 0 {
+                squad_point = squad_point_array[0];
+            } else {
+                if ArraySize(fallback_squad_point_array) > 0 {
+                    squad_point = fallback_squad_point_array[0];
+                } else {
+                    LogChannel(n"WARN", "[RandomCyberpsychosEventSystem][TryCreateGroundNCPDFallbackUnits]: COULD NOT FIND ANY PURSUIT POINT FOR FALLBACK NCPD UNITS");
+                    return false;
+                };
+            };
+            let unit_points: array<Vector4>;
+            let fallback_unit_points: array<Vector4>;
+            let unit_point_success = NavSys.FindPursuitPointsRange(psycho_pos,
+                                                                   psycho_pos,
+                                                                   dummy_v4,
+                                                                   15.00,
+                                                                   50.00,
+                                                                   ArraySize(squadSpecs),
+                                                                   false,
+                                                                   NavGenAgentSize.Human,
+                                                                   unit_points,
+                                                                   fallback_unit_points);
+
+            while ii < ArraySize(squadSpecs) {
+                let npcSpec = squadSpecs[ii];
+                let unit_pos: Vector4;
+                if ArraySize(unit_points) > ii {
+                    unit_pos = unit_points[ii];
+                } else {
+                    if ArraySize(fallback_unit_points) < ii {
+                    LogChannel(n"WARN", "[RandomCyberpsychosEventSystem][TryCreateGroundNCPDFallbackUnits]: COULD NOT FIND A UNIQUE SPAWNPOINT FOR FALLBACK NCPD UNIT");
+                        if ArraySize(fallback_unit_points) < 0 {
+                            LogChannel(n"WARN", "[RandomCyberpsychosEventSystem][TryCreateGroundNCPDFallbackUnits]: COULD NOT FIND ANY SPAWNPOINT FOR FALLBACK NCPD UNIT");
+                            return false;
+                        };
+                        unit_pos = fallback_unit_points[ArraySize(fallback_unit_points) - 1];
+                    };
+                };
+                npcSpec.position = unit_pos;
+                let npcID = dynamicEntSys.CreateEntity(npcSpec);
+                let npc = GameInstance.FindEntityByID(GetGameInstance(), npcID);
+                TargetTrackingExtension.InjectThreat((npc as ScriptedPuppet), cyberpsycho, 1.00, -1.00);
+                ArrayPush(squadIDs, npcID);
+                ii += 1;
+            };
+            ArrayPush(groundPoliceSquads, squadIDs);
+            i += 1;
+        };
+        return true;
+    };
+
+    func TryCreateMaxtacFallbackUnits() -> Bool {
+        let gi: GameInstance = this.GetGameInstance();
+        let NavSys = GameInstance.GetNavigationSystem(gi);
+        let MaxTacRecords: array<TweakDBID> = [t"Character.maxtac_av_mantis_wa",
+                                               t"Character.maxtac_av_LMG_mb",
+                                               t"Character.maxtac_av_riffle_ma",
+                                               t"Character.maxtac_av_sniper_wa_elite"];
+        let cyberpsycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID);
+        let psycho_pos = cyberpsycho.GetWorldPosition();
+        let maxtac_points: array<Vector4>;
+        let fallback_maxtac_points: array<Vector4>;
+        let pursuit_points_success = NavSys.FindPursuitPointsRange(psycho_pos,
+                                                                   psycho_pos,
+                                                                   new Vector4(0.00, 0.00, 0.00, 0.00),
+                                                                   15.00,
+                                                                   50.00,
+                                                                   4,
+                                                                   false,
+                                                                   NavGenAgentSize.Human,
+                                                                   maxtac_points,
+                                                                   fallback_maxtac_points);
+        let squadIDs: array<EntityID>;
+        let i = 0;
+        while i < 4 {
+            let maxtacSpec: ref<DynamicEntitySpec> = new DynamicEntitySpec();
+            maxtacSpec.recordID = MaxTacRecords[i];
+            maxtacSpec.persistState = true;
+            maxtacSpec.persistSpawn = true;
+            maxtacSpec.alwaysSpawned = false;
+            maxtacSpec.tags = [n"RandomCyberpsychos_npc_maxtac"];
+            if ArraySize(maxtac_points) > i {
+                maxtacSpec.position = maxtac_points[i];
+            } else {
+                if ArraySize(fallback_maxtac_points) < i {
+                    LogChannel(n"WARN", "[RandomCyberpsychosEventSystem][TryCreateMaxtacFallbackUnits]: COULD NOT FIND A UNIQUE SPAWNPOINT FOR FALLBACK UNIT");
+                    if ArraySize(fallback_maxtac_points) < 0 {
+                    LogChannel(n"WARN", "[RandomCyberpsychosEventSystem][TryCreateMaxtacFallbackUnits]: COULD NOT FIND ANY SPAWNPOINT FOR FALLBACK MAXTAC UNITS");
+                        return false;
+                    };
+                    maxtacSpec.position = fallback_maxtac_points[-1];
+                };
+            };
+            LogChannel(n"WARN", "CREATING MAXTAC FALLBACK NPC");
+            let npcID = GameInstance.GetDynamicEntitySystem().CreateEntity(maxtacSpec);
+            ArrayPush(squadIDs, npcID);
+            let npc = GameInstance.FindEntityByID(GetGameInstance(), npcID);
+            TargetTrackingExtension.InjectThreat((npc as ScriptedPuppet),
+                                                 cyberpsycho,
+                                                 1.00,
+                                                 -1.00);
+            i += 1;
+        };
+
+        ArrayPush(this.groundPoliceSquads, squadIDs);
+        return true;
+    };
+
+    func SendCyberpsychoChaseCommand(cyberpsycho: ref<NPCPuppet>,
+                                     veh: ref<WheeledObject>) -> Void {
+        let delaySys = GameInstance.GetDelaySystem(GetGameInstance());
+        let drive_req = new DriveToPointAutonomousUpdate();
+        drive_req.targetPosition = cyberpsycho.GetWorldPosition();
+        drive_req.minimumDistanceToTarget = 25;
+        drive_req.driveDownTheRoadIndefinitely = false;
+        drive_req.maxSpeed = 50;
+        drive_req.minSpeed = 15;
+        drive_req.clearTrafficOnPath = false;
+        let AIEvt = new AICommandEvent();
+        let drive_cmd = drive_req.CreateCmd();
+        AIEvt.command = drive_cmd;
+        veh.QueueEvent(AIEvt);
+        veh.GetAIComponent().SetDriveToPointAutonomousUpdate(drive_req);
+        veh.GetAIComponent().SetInitCmd(drive_cmd);
+    };
+
+    func OnGroundNCPDConvoyVehicleAttached(evt: RandomCyberpsychosGroundNCPDConvoyVehicleAttachedEvent) -> Void {
+        let gi: GameInstance = this.GetGameInstance();
+        let vehID = evt.vehicleSquad[0];
+        let veh_obj = GameInstance.FindEntityByID(gi, vehID) as WheeledObject;
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        evt.sender.Stop();
+        let sirenDelayEvent = new VehicleSirenDelayEvent();
+        sirenDelayEvent.lights = true;
+        sirenDelayEvent.sounds = true;
+        delaySys.DelayEvent(veh_obj, sirenDelayEvent, 0.10);
+        veh_obj.GetVehicleComponent().OnVehicleSirenDelayEvent(sirenDelayEvent);
+        let cyberpsycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID) as NPCPuppet;
+        this.SendCyberpsychoChaseCommand(cyberpsycho, veh_obj);
+        let arrivalDaemon = new RandomCyberpsychosConvoyVehicleArrivalDaemon();
+        arrivalDaemon.cyberpsycho = cyberpsycho;
+        arrivalDaemon.vehicleSquad = evt.vehicleSquad;
+        arrivalDaemon.Start(gi, 1.00, true);
+        LogChannel(n"DEBUG", "CREATING ARRIVAL DAEMON");
+    };
+
+    func OnGroundNCPDVehicleHasArrived(evt: RandomCyberpsychosGroundNCPDConvoyVehicleArrivedEvent) -> Void {
+        evt.sender.Stop();
+        if this.isCyberpsychoDefeated() {
+            return;
+        };
+
+        let gi: GameInstance = this.GetGameInstance();
+        let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
+        let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
+        let vehID = evt.vehicleSquad[0];
+        let veh = GameInstance.FindEntityByID(gi, vehID);
+        let passengers: array<wref<GameObject>>;
+        /* If the driver is spawned earlier than here, such as when the actual
+           drive to point autonomous command is issued, the ground vehicle will
+           cancel the drive to point command and join traffic, and never reach 
+           the cyberpsycho. We spawn the driver later (here) as a workaround so
+           that the command doesn't get canceled until the units are already
+           close. */
+
+        let passenger = new DynamicEntitySpec();
+        passenger.recordID = t"Character.ncpd_hwp_gunner2_defender_mb_rare";
+        passenger.position = veh.GetWorldPosition();
+        passenger.persistState = true;
+        passenger.persistSpawn = true;
+        passenger.alwaysSpawned = false;
+        passenger.tags = [n"RandomCyberpsychos_npc_police"];
+        let npcID = GameInstance.GetDynamicEntitySystem().CreateEntity(passenger);
+        let i = 0;
+        while i < ArraySize(this.groundPoliceSquads) {
+            let squadVehID = this.groundPoliceSquads[i][0];
+            if squadVehID == vehID {
+                ArrayPush(this.groundPoliceSquads[i], npcID);
+                break;
+            };
+            i += 1;
+        };
+        let npc = GameInstance.FindEntityByID(gi, npcID);
+        let seat_record = TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatFrontLeft");
+        MountEntityToVehicle(npcID, vehID, seat_record, true, false, true);
+        (npc as ScriptedPuppet).TryRegisterToPrevention();
+        LogChannel(n"DBUG", s"CONVOY DRIVER REGISTERED?: \(preventionSys.IsRegistered(npcID))");
+        let cyberpsycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID) as NPCPuppet;
+        let i = 1;
+        while i < ArraySize(evt.vehicleSquad) {
+            let unit = evt.vehicleSquad[i];
+            let npc = (GameInstance.FindEntityByID(gi, unit) as ScriptedPuppet);
+            TargetTrackingExtension.InjectThreat(npc,
+                                                 cyberpsycho,
+                                                 1.00,
+                                                 -1.00);
+            NPCPuppet.ChangeHighLevelState(npc, gamedataNPCHighLevelState.Combat);
+            i += 1;
+        };
+    };
+
+    func isCyberpsychoDefeated() -> Bool {
+        return this.cyberpsychoIsDead;
+    };
+    func isCyberpsychoEventInProgress() -> Bool {
+        return this.isCyberpsychoEventInProgress;
+    };
+
+    func OnCyberpsychoIsDead(evt: RandomCyberpsychosCyberpsychoDeathEvent) -> Void {
+        let gi: GameInstance = this.GetGameInstance();
+        let npc: wref<ScriptedPuppet>;
+        let psychoSys = GameInstance.GetRandomCyberpsychosSystem(gi);
+        let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
+        let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        let mappinSys = GameInstance.GetMappinSystem(gi);
+        let attitudeSys = GameInstance.GetAttitudeSystem(gi);
+        let psychoStimBroacaster = evt.cyberpsycho.GetStimBroadcasterComponent();
+        evt.sender.Stop();
+        mappinSys.UnregisterMappin(this.cyberpsychoMappinID);
+        attitudeSys.SetAttitudeGroupRelationfromTweakPersistent(t"Attitudes.Group_Police",
+                                                                t"Attitudes.Group_Civilian",
+                                                                EAIAttitude.AIA_Neutral);
+        psychoStimBroacaster.RemoveActiveStimuliByName(evt.cyberpsycho,
+                                                       gamedataStimType.VehicleHit);
+        psychoStimBroacaster.RemoveActiveStimuliByName(evt.cyberpsycho,
+                                                       gamedataStimType.Terror);
+        this.cyberpsychoIsDead = true;
+        this.cyberpsychoTargetDaemon.Stop();
+        this.EndNCPDNpcResponse(this.groundPoliceSquads);
+        let EnablePreventionCback = new RandomCyberpsychosDelayPreventionSystemEnabledCallback();
+        delaySys.DelayCallback(EnablePreventionCback, 5.00, true);
+        this.lastEncounterSeconds = 0u;
+        SaveLocksManager.RequestSaveLockRemove(gi, n"RandomCyberpsychosEventInProgress");
+        FastTravelSystem.RemoveFastTravelLock(n"RandomCyberpsychosEventInProgress", gi);
+    };
+
+    func EndNCPDNpcResponse(groundPoliceSquads: array<array<EntityID>>) -> Void {
+        let gi: GameInstance = this.GetGameInstance();
+        let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
+        let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
+        let reactionSystem: ref<ReactionSystem> = GameInstance.GetReactionSystem(gi);
+        if NotEquals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
+            return;
+        };
+
+        let seat_priority_list: array<ref<VehicleSeat_Record>> = [TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatFrontLeft"), TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatFrontRight"), TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatBackLeft"), TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatBackRight")];
+
+        let i: Int32 = 0;
+        while i < ArraySize(groundPoliceSquads) {
+            let squad = groundPoliceSquads[i];
+            let vehID = squad[0];
+            let slot_num: Int32 = 0;
+            let ii: Int32 = 1;
+            while ii < ArraySize(squad) {
+                let npc = GameInstance.FindEntityByID(GetGameInstance(), squad[ii]);
+                let slot = seat_priority_list[slot_num].SeatName();
+                if this.TryMountGroundNCPDUnitToVehicle(npc, vehID, slot) {
+                    slot_num += 1;
+                } else {
+                    let player_pos_v3 = Cast<Vector3>(GetPlayer(gi).GetWorldPosition());
+                    reactionSystem.TryAndJoinTraffic((npc as GameObject),
+                                                     player_pos_v3,
+                                                     false);
+                };
+                ii += 1;
+            };
+            i += 1;
+        };
+    };
+
+    func TryMountGroundNCPDUnitToVehicle(unit: ref<Entity>,
+                                         vehID: EntityID,
+                                         slot: CName) -> Bool {
+
+        let gi: GameInstance = this.GetGameInstance();
+        let veh: ref<VehicleObject> = GameInstance.FindEntityByID(gi, vehID) as VehicleObject;
+        let unit_as_puppet = unit as ScriptedPuppet;
+        let unit_as_g_obj = unit as GameObject;
+        if !IsDefined(veh) || veh.IsDestroyed() {
+            LogChannel(n"WARN", "[RandomCyberpsychosEventSystem][TryMountGroundNCPDUnitToVehicle]: FAILED TO MOUNT UNIT TO POLICE VEHICLE: CAR NOT DRIVABLE");
+            return false;
+        };
+
+        if !IsDefined(unit)
+        || (unit_as_puppet).IsDead()
+        || ScriptedPuppet.IsDefeated((unit_as_g_obj))
+        || ScriptedPuppet.IsUnconscious((unit_as_g_obj)) {
+            LogChannel(n"WARN", "[RandomCyberpsychosEventSystem][TryMountGroundNCPDUnitToVehicle]: FAILED TO MOUNT UNIMT TO POLICE VEHICLE: PUPPET CONDITIONS");
+            return false;
+        };
+
+        let mountData = new MountEventData();
+        mountData.slotName = slot;
+        mountData.mountParentEntityId = vehID;
+        mountData.isInstant = false;
+        mountData.ignoreHLS = true;
+        if Equals((unit_as_puppet).GetHighLevelStateFromBlackboard(),
+                  gamedataNPCHighLevelState.Combat) {
+            mountData.entrySlotName = n"combat";
+        };
+        let mountCommand = new AIMountCommand();
+        mountCommand.mountData = mountData;
+        let evt = new AICommandEvent();
+        evt.command = mountCommand;
+        unit.QueueEvent(evt);
+        return true;
+    };
+
+    func OnPlayerSecondAway(evt: RandomCyberpsychosPlayerSecondsAwayEvent) -> Void {
+        this.playerSecondsAway += Cast<Uint16>(1);
+        if evt.distance > 22500.00 || this.playerSecondsAway > Cast<Uint16>(45) { // > 150m
+            evt.sender.Stop();
+            this.CleanupCyberpsychoEvent();
+        };
+    };
+
+    func CleanupCyberpsychoEvent() -> Void {
+        let gi: GameInstance = this.GetGameInstance();
+        let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
+        let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
+        let delaySys = GameInstance.GetDelaySystem(gi);
+        let mappinSys = GameInstance.GetMappinSystem(gi);
+        mappinSys.UnregisterMappin(this.cyberpsychoMappinID);
+        this.cyberpsychoDeathDaemon.Stop();
+        this.cyberpsychoAttachmentDaemon.Stop();
+        GameInstance.GetDynamicEntitySystem().DeleteEntity(this.cyberpsychoID);
+        this.cyberpsychoID = new EntityID();
+        if ArraySize(this.groundPoliceSquads) > 0 {
+            let deletionDaemon = new RandomCyberpsychosNCPDGroundPoliceDeletionDaemon();
+            deletionDaemon.units = this.groundPoliceSquads;
+            deletionDaemon.Start(gi, 1.00, false);
+            this.isUnitDeletionPending = true;
+        };
+        preventionSys.TogglePreventionSystem(true);
+        this.lastEncounterSeconds = 0u;
+        this.StartNewMinutesSinceLastEncounterCallback(120.00);
+        SaveLocksManager.RequestSaveLockRemove(gi, n"RandomCyberpsychosEventInProgress");
+        FastTravelSystem.RemoveFastTravelLock(n"RandomCyberpsychosEventInProgress", gi);
+        this.isCyberpsychoEventInProgress = false;
+        this.lastEncounterSecondsDaemon.Start(gi, 1.00, true);
+    };
+
+    func OnGroundNCPDUnitsDeletionRequested(evt: RandomCyberpsychosUnitsDeletionRequestedEvent) -> Void {
+        if evt.allUnitsDeleted {
+            evt.sender.Stop();
+            this.isUnitDeletionPending = false;
+        };
+
+        for unitID in evt.units {
+            GameInstance.GetDynamicEntitySystem().DeleteEntity(unitID);
+        };
+    };
+
+    func GetCyberpsychoCharacterPools(district_name: String) -> array<TweakDBID> {
+        switch district_name {
+            case "Northside":
+            case "ArasakaWaterfront":
+                return [t"RandomCyberpsychos.Character_Pool_Maelstrom_Psychos"];
+            case "LittleChina":
+                return [t"RandomCyberpsychos.Character_Pool_Maelstrom_Psychos",
+                        t"RandomCyberpsychos.Character_Pool_Tyger_Claw_Psychos"];
+            case "Kabuki":
+            case "JapanTown":
+                return [t"RandomCyberpsychos.Character_Pool_Mox_Psychos",
+                        t"RandomCyberpsychos.Character_Pool_Tyger_Claw_Psychos"];
+            case "CharterHill":
+                return [t"RandomCyberpsychos.Character_Pool_Tyger_Claw_Psychos"];
+            case "VistaDelRey":
+            case "Heywood":
+                return [t"RandomCyberpsychos.Character_Pool_Sixth_Street_Psychos",
+                        t"RandomCyberpsychos.Character_Pool_Valentino_Psychos"];
+            case "Glen":
+                return [t"RandomCyberpsychos.Character_Pool_Valentino_Psychos"];
+            case "Arroyo":
+            case "RanchoCoronado":
+                return [t"RandomCyberpsychos.Character_Pool_Sixth_Street_Psychos"];
+            case "Pacifica":
+            case "CoastView":
+            case "WestWindEstate":
+                return [t"RandomCyberpsychos.Character_Pool_Scav_Psychos",
+                        t"RandomCyberpsychos.Character_Pool_Voodoo_Boy_Psychos"];
+
+            case "Badlands_JacksonPlains":
+            case "Badlands_LagunaBend":
+            case "Badlands_RattlesnakeCreek":
+            case "Badlands_RedPeaks":
+            case "Badlands_RockyRidge":
+            case "Badlands_SierraSonora":
+            case "Badlands_SoCalBorderCrossing":
+            case "Badlands_VasquezPass":
+                return [t"RandomCyberpsychos.Character_Pool_Wraith_Psychos"];
+            default:
+                return [];
+        };
+
+    };
+
+    func GetCyberpsychoEntitySpec(district_name: String) -> ref<DynamicEntitySpec> {
+        let pool: array<TweakDBID>;
+        let psychoSpec: ref<DynamicEntitySpec> = new DynamicEntitySpec();
+        let psychoPools = this.GetCyberpsychoCharacterPools(district_name);
+        let rand_pool_index = RandRange(0, ArraySize(psychoPools));
+        psychoSpec.persistState = true;
+        psychoSpec.persistSpawn = true;
+        psychoSpec.alwaysSpawned = false;
+        psychoSpec.tags = [n"RandomCyberpsychos_npc_cyberpsycho"];
+
+        if ArraySize(psychoPools) == 0 || RandRange(0, 4) == 0 {
+            pool = TweakDBInterface.GetForeignKeyArray(t"RandomCyberpsychos.Character_Pool_Generic_Psychos");
+        } else {
+            pool = TweakDBInterface.GetForeignKeyArray(psychoPools[rand_pool_index]);
+        };
+
+        let rand_record_index = RandRange(0, ArraySize(pool));
+        psychoSpec.recordID = pool[rand_record_index];
+        return psychoSpec;
+    };
+
+    func GetCyberpsychoGroundPoliceEntitySpecs() -> array<array<ref<DynamicEntitySpec>>> {
+        let ground_police_specs: array<array<ref<DynamicEntitySpec>>>;
+        let squad_specs: array<ref<DynamicEntitySpec>>;
+        let vehicle_spec: ref<DynamicEntitySpec> = new DynamicEntitySpec();
+        let veh_record: TweakDBID;
+        let police_record_IDs: array<TweakDBID> = [t"Character.ncpd_hwp_gunner2_defender_mb_rare",
+                                                   t"Character.ncpd_police_shotgun3_crusher_mb_elite",
+                                                   t"Character.ncpd_police_ranged2_copperhead_wa",
+                                                   t"Character.ncpd_police_ranged2_copperhead_ma"];
+        let n: Uint8 = Cast<Uint8>(RandRange(0, 10));
+        let i: Int32 = 0;
+        if n > Cast<Uint8>(8) {
+            veh_record = t"Vehicle.v_standard3_militech_hellhound_police";
+        } else {
+            if n > Cast<Uint8>(6) {
+              veh_record = t"Vehicle.v_standard25_thorton_merrimac_police";
+            } else {
+              veh_record = t"Vehicle.v_standard3_chevalier_emperor_police_prevention";
+            };
+        };
+
+
+        vehicle_spec.recordID = veh_record;
+        vehicle_spec.persistState = true;
+        vehicle_spec.persistSpawn = true;
+        vehicle_spec.alwaysSpawned = false;
+        vehicle_spec.tags = [n"RandomCyberpsychos_vehicle_police"];
+
+        i = 0;
+        while i < 3 {
+            let squad_specs: array<ref<DynamicEntitySpec>>;
+            ArrayPush(squad_specs, vehicle_spec);
+            let ii = 0;
+            while ii < 5 {
+                let npc_spec: ref<DynamicEntitySpec> = new DynamicEntitySpec();
+                npc_spec.recordID = police_record_IDs[ii];
+                npc_spec.persistState = true;
+                npc_spec.persistSpawn = true;
+                npc_spec.alwaysSpawned = false;
+                npc_spec.tags = [n"RandomCyberpsychos_npc_police"];
+                ArrayPush(squad_specs, npc_spec);
+                ii += 1;
+            };
+
+            ArrayPush(ground_police_specs, squad_specs);
+            i += 1;
+        };
+        return ground_police_specs;
+    };
+
+    func StartNewMinutesSinceLastEncounterCallback(timeBetweenCalls: Float) -> Void {
+        let gi: GameInstance = this.GetGameInstance();
+        let lastEncounterSecondsDaemon = new RandomCyberpsychosLastEncounterSecondsDaemon();
+        this.lastEncounterSecondsDaemon = lastEncounterSecondsDaemon;
+        lastEncounterSecondsDaemon.Start(gi, timeBetweenCalls, true);
+    };
+
+    func AddlastEncounterSeconds(seconds: Uint32) -> Void {
+        this.lastEncounterSeconds = this.lastEncounterSeconds + seconds;
+    };
+
+    func ShouldStartCyberpsychoEvent() -> Bool {
+        let gi: GameInstance = this.GetGameInstance();
+        let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
+        let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
+        let player: ref<PlayerPuppet> = GetPlayer(gi);
+        let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
+        let district_chance: Int8;
+        let questsContentSystem = GameInstance.GetQuestsContentSystem(gi);
+        let previous_psychoID = this.cyberpsychoID;
+        if EntityID.IsDefined(previous_psychoID) {
+            return false;
+        };
+
+        let player_vehicle = player.GetMountedVehicle() as VehicleObject;
+        if player_vehicle.IsInAir() {
+            return false;
+        };
+
+        if preventionSys.IsPlayerInQuestArea()
+        || questsContentSystem.IsTokensActivationBlocked()
+        || IsPlayerNearQuestMappin(50.00)
+        || StatusEffectSystem.ObjectHasStatusEffectWithTag(player, n"NoCombat")
+        || StatusEffectSystem.ObjectHasStatusEffectWithTag(player, n"VehicleScene")
+        || player.GetPuppetStateBlackboard().GetBool(GetAllBlackboardDefs().PuppetState.InAirAnimation)
+        || Equals(player.m_securityAreaTypeE3HACK, ESecurityAreaType.SAFE) {
+            return false;
+        };
+
+        district_chance = this.getDistrictSpawnChance(district_name);
+        if district_chance == Cast<Int8>(-1) {
+            LogChannel(n"ERROR", s"[RandomCyberpsychosEventSystem][ShouldStartCyberpsychoEvent]: District \(district_name) not found, exiting.");
+            return false;
+        };
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][ShouldStartCyberpsychoEvent]: DISTRICT NAME: \(district_name)");
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][ShouldStartCyberpsychoEvent]: DISTRICT CHANCE: \(district_chance)");
+        let cooldown_seconds = this.GetCooldownSeconds();
+
+        if this.rollCyberPsychoEncounterChance(district_chance,
+                                               this.lastEncounterSeconds,
+                                               cooldown_seconds) < 60.00 {
+            return false;
+        };
+
+        return true;
+    };
+
+    func getCyberpsychoSpawnPoint(center: Vector4,
+                                  district_name: String) -> Vector4 {
+        let gi: GameInstance = this.GetGameInstance();
+        let NavSys = GameInstance.GetNavigationSystem(gi);
+        let player: ref<PlayerPuppet> = GetPlayer(gi);
+        let spawn_point_params = this.getDistrictSpawnPointSearchParams(district_name);
+        let security_zone_filters = [ESecurityAreaType.SAFE,
+                                            ESecurityAreaType.RESTRICTED,
+                                            ESecurityAreaType.DANGEROUS,
+                                            ESecurityAreaType.DISABLED];
+
+        let zero_v4: Vector4;
+        let pursuit_points: array<Vector4>;
+        let fallback_pursuit_points: array<Vector4>;
+        let success = NavSys.FindPursuitPointsRange(player.GetWorldPosition(),
+                                                    player.GetWorldPosition(),
+                                                    zero_v4,
+                                                    spawn_point_params.deadzone,
+                                                    spawn_point_params.search_size,
+                                                    1,
+                                                    false,
+                                                    NavGenAgentSize.Human,
+                                                    pursuit_points,
+                                                    fallback_pursuit_points);
+
+        if success {
+            let point = pursuit_points[0];
+            if !isPointInAnyLoadedSecurityAreaRadius(point, security_zone_filters, true) {
+                return point;
+            };
+        };
+
+        return findValidSpawnPointInCube(gi,
+                                         center,
+                                         spawn_point_params.search_size,
+                                         player.GetWorldPosition(),
+                                         spawn_point_params.sector_size,
+                                         spawn_point_params.deadzone,
+                                         security_zone_filters);
+    };
+
+    func GetCyberpsychoPoliceResponseDelays(district_name: String) -> RandomCyberpsychosDistrictPoliceDelays {
+        let responseDelays: RandomCyberpsychosDistrictPoliceDelays;
+        switch district_name {
+            case "ArasakaWaterfront":
+            case "CharterHill":
+            case "CityCenter":
+            case "Columbarium":
+            case "CorpoPlaza":
+            case "Downtown":
+            case "NorthOaks":
+            case "Badlands_SoCalBorderCrossing":
+                responseDelays.ncpdDelay = Cast<Int16>(RandRange(25, 50));
+                responseDelays.maxtacDelay = Cast<Int16>(RandRange(45, 75));
+                break;
+            case "LittleChina":
+            case "JapanTown":
+            case "Glen":
+            case "Wellsprings":
+                responseDelays.ncpdDelay = Cast<Int16>(RandRange(45, 75));
+                responseDelays.maxtacDelay = Cast<Int16>(RandRange(50, 80));
+                break;
+            case "Arroyo":
+            case "Heywood":
+            case "Kabuki":
+            case "RanchoCoronado":
+            case "SouthBadlands_TrailerPark":
+            case "VistaDelRey":
+            case "Watson":
+                responseDelays.ncpdDelay = Cast<Int16>(RandRange(90, 120));
+                responseDelays.maxtacDelay = Cast<Int16>(RandRange(75, 125));
+                break;
+            default:
+                responseDelays.ncpdDelay = Cast<Int16>(-1);
+                responseDelays.maxtacDelay = Cast<Int16>(-1);
+                break;
+        };
+
+        return responseDelays;
+    };
+
+    func getDistrictSpawnChance(district_name: String) -> Int8 {
+        switch district_name {
+            case "Badlands":
+            case "Badlands_LagunaBend":
+            case "NorthBadlands":
+            case "Badlands_SierraSonora":
+            case "Badlands_RedPeaks":
+            case "Badlands_VasquezPass":
+            case "Badlands_RattlesnakeCreek":
+                return Cast<Int8>(30);
+            case "NorthOaks":
+            case "Badlands_NorthSunriseOilField":
+            case "Badlands_JacksonPlains":
+                return Cast<Int8>(31);
+            case "Badlands_RockyRidge":
+            case "SouthBadlands":
+            case "SouthBadlands_TrailerPark":
+                return Cast<Int8>(32);
+            case "Badlands_BiotechnicaFlats":
+                return Cast<Int8>(33);
+            case "CityCenter":
+            case "CorpoPlaza":
+            case "Badlands_SoCalBorderCrossing":
+            case "Westbrook":
+                return Cast<Int8>(35);
+            case "Arroyo":
+            case "Downtown":
+            case "Glen":
+            case "Heywood":
+            case "JapanTown":
+            case "LittleChina":
+            case "SantoDomingo":
+            case "VistaDelRey":
+            case "Kabuki":
+            case "Wellsprings":
+                return Cast<Int8>(36);
+            case "Watson":
+            case "ArasakaWaterfront":
+            case "RanchoCoronado":
+            case "SantoDomingo":
+                return Cast<Int8>(37);
+            case "Northside":
+                return Cast<Int8>(38);
+            case "Pacifica":
+            case "Coastview":
+            case "WestWindEstate":
+            case "Dogtown":
+                return Cast<Int8>(39);
+            default:
+                return Cast<Int8>(-1);
+        };
+    };
+
+    func getDistrictSpawnPointSearchParams(district_name: String) -> RandomCyberpsychosSpawnPointSearchParams {
+        // TODO Make params for the bandlands sunset motel area
+        // and check using point in polygon + Badlands_RedPeaks
+        let params: RandomCyberpsychosSpawnPointSearchParams;
+        switch district_name {
+            case "Badlands":
+            case "BiotechnicaFlats":
+            case "JacksonPlains":
+            case "LagunaBend":
+            case "NorthBadlands":
+            case "NorthSunriseOilField":
+            case "Badlands_RockyRidge":
+            case "SierraSonora":
+            case "SouthBadlands":
+                params.search_size = 50.00;
+                params.sector_size = 10.00;
+                params.deadzone = 20.00;
+                break;
+            case "Kabuki":
+            case "Columbarium":
+                params.search_size = 20.00;
+                params.sector_size = 5.00;
+                params.deadzone = 10.00;
+                break;
+            case "Badlands_SoCalBorderCrossing":
+                params.search_size = 50.00;
+                params.sector_size = 10.00;
+                params.deadzone = 20.00;
+                break;
+            default:
+                params.search_size = 40.00;
+                params.sector_size = 10.00;
+                params.deadzone = 15.00;
+        };
+        return params;
+    };
+
+    func rollCyberPsychoEncounterChance(district_chance: Int8,
+                                        last_encounter_seconds: Uint32,
+                                        cooldown_seconds: Uint32) -> Float {
+        let highway_mod: Float;
+        let last_encounter_add: Float;
+        let gi: GameInstance = this.GetGameInstance();
+        let preventionSpawnSys = GameInstance.GetPreventionSpawnSystem(gi);
+        let last_encounter_seconds = Cast<Float>(last_encounter_seconds);
+        let cooldown_seconds = Cast<Float>(cooldown_seconds);
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][rollCyberPsychoEncounterChance] ------------------------------ ROLL ------------------------");
+        last_encounter_add = ((last_encounter_seconds - cooldown_seconds) * 0.0004);
+        last_encounter_add = MaxF(0.00, MinF(8.00, (last_encounter_add)));
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][rollCyberPsychoEncounterChance]: LAST ENCOUNTER ADDITIVE: \(last_encounter_add)");
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][rollCyberPsychoEncounterChance]: ENCOUNTER MULTIPLIER: \(this.GetEncounterMultiplier())");
+        if preventionSpawnSys.IsPlayerOnHighway() {
+            highway_mod = 20.00;
+        } else {
+            highway_mod = 0.00;
+        };
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][rollCyberPsychoEncounterChance]: HIGHWAY MODIFIER: \(highway_mod)");
+        let rand_factor = RandRangeF(-20.00, 25.00);
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][rollCyberPsychoEncounterChance]: RANDOM FACTOR: \(rand_factor)");
+
+        let encounter_mult = this.GetEncounterMultiplier();
+        let roll = Cast<Float>(district_chance)
+                   + last_encounter_add
+                   + rand_factor
+                   * encounter_mult
+                   - highway_mod;
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][rollCyberPsychoEncounterChance]: PSYCHO EVENT ROLL SCORE: \(roll)");
+        return roll;
+    };
+
+    func isEntityPartOfGroundPoliceSquad(entID: EntityID,
+                                         groundPoliceSquads: array<array<EntityID>>) -> Bool {
+        for squad in groundPoliceSquads {
+            for id in squad {
+                if entID == id {
+                    return true;
+                };
+            };
+        };
+        return false;
+    };
+
+    func SpawnMaxTacAV() -> Bool {
+        let gi: GameInstance = this.GetGameInstance();
+        let PrevSpawnSystem = GameInstance.GetPreventionSpawnSystem(gi);
+        let psycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID);
+        let psycho_pos: Vector4 = psycho.GetWorldPosition();
+        if this.isCyberpsychoDefeated() {
+            return false;
+        };
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][SpawnMaxTacAV]: MAXTAC AV PSYCHO POS: \(psycho.GetWorldPosition())");
+        let spawn_point: Vector4;
+        let spawn_point_v3: Vector3;
+        let maxtac_npc_records = [t"Character.maxtac_av_LMG_mb",
+                                  t"Character.maxtac_av_mantis_wa",
+                                  t"Character.maxtac_av_riffle_ma",
+                                  t"Character.maxtac_av_sniper_wa_elite"];
+        if !this.FindValidMaxtacAVSpawnPointAroundCyberpsycho(psycho_pos, spawn_point) {
+            LogChannel(n"WARN", "[RandomCyberpsychosEventSystem][SpawnMaxTacAV]: Could not find point for AV!, STARTING GROUND FALLBACK");
+            return this.TryCreateMaxtacFallbackUnits();
+        };
+        spawn_point_v3 = Vector4.Vector4To3(spawn_point);
+        PrevSpawnSystem.RequestAVSpawnAtLocation(t"Vehicle.max_tac_av1",
+                                                 spawn_point_v3);
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][SpawnMaxTacAV]: MAXTAC SPAWN POINT: \(spawn_point)");
+        return true;
+    };
+
+    func MaxtacDetectPsychoFromAV(av: ref<GameObject>,
+                                  cyberpsycho: ref<ScriptedPuppet>) -> Void {
+        let passengers: array<wref<GameObject>>;
+        let puppet: ref<ScriptedPuppet>;
+        let gi: GameInstance = av.GetGame();
+        let id: EntityID = av.GetEntityID();
+        let i: Int32;
+        VehicleComponent.GetAllPassengers(gi, id, false, passengers);
+        i = 0;
+        while i < ArraySize(passengers) {
+            puppet = passengers[i] as ScriptedPuppet;
+            if AIActionHelper.TryChangingAttitudeToHostile(puppet, cyberpsycho) {
+                TargetTrackingExtension.InjectThreat(puppet, cyberpsycho, 1.00, -1.00);
+                NPCPuppet.ChangeHighLevelState(puppet, gamedataNPCHighLevelState.Combat);
+            };
+            i += 1;
+        };
+    };
+
+    func GetOffAVPsycho(psycho: ref<GameObject>, go: ref<GameObject>) -> Void {
+        let biggestDelay: Float;
+        let evt: ref<PushAnimEventDelayed>;
+        let i: Int32;
+        let jumpDelay: Float;
+        let numberOfLMGs: Int32;
+        let numberOfMantisBlades: Int32;
+        let numberOfSnipers: Int32;
+        let passenger: wref<ScriptedPuppet>;
+        let passengers: array<wref<GameObject>>;
+        let gi: GameInstance = go.GetGame();
+        let id: EntityID = go.GetEntityID();
+        VehicleComponent.GetAllPassengers(gi, id, false, passengers);
+        i = 0;
+        while i < ArraySize(passengers) {
+            jumpDelay = 0.00;
+            passenger = passengers[i] as ScriptedPuppet;
+            switch passenger.GetRecordID() {
+                case t"Character.maxtac_av_mantis_wa_2nd_wave":
+                case t"Character.maxtac_av_mantis_wa":
+                    jumpDelay = 2.00 + Cast<Float>(numberOfMantisBlades) / 4.00;
+                    numberOfMantisBlades += 1;
+                    break;
+                case t"Character.maxtac_av_riffle_ma_2nd_wave":
+                case t"Character.maxtac_av_riffle_ma":
+                case t"Character.maxtac_av_LMG_mb_2nd_wave":
+                case t"Character.maxtac_av_LMG_mb":
+                    jumpDelay = 0.50 + Cast<Float>(numberOfLMGs) / 4.00;
+                    numberOfLMGs += 1;
+                    break;
+                case t"Character.maxtac_av_sniper_wa_elite_2nd_wave":
+                case t"Character.maxtac_av_sniper_wa_elite":
+                case t"Character.maxtac_av_netrunner_ma_2nd_wave":
+                case t"Character.maxtac_av_netrunner_ma":
+                    jumpDelay = 1.20 + Cast<Float>(numberOfSnipers) / 4.00;
+                    numberOfSnipers += 1;
+                    break;
+                default:
+                    jumpDelay = Cast<Float>(i);
+            };
+            if jumpDelay > biggestDelay {
+                biggestDelay = jumpDelay;
+            };
+              StatusEffectHelper.ApplyStatusEffect(passenger, t"BaseStatusEffect.MaxtacFightStartHelperStatus", jumpDelay);
+              GameInstance.GetDelaySystem(gi).DelayEvent(passenger, AIEvents.ExitVehicleEvent(), jumpDelay);
+              if i == 0 {
+                  StatusEffectHelper.ApplyStatusEffect(psycho, t"StatusEffect.HackReveal", passenger.GetEntityID());
+              };
+              i += 1;
+        };
+        if ArraySize(passengers) > 0 {
+            biggestDelay += 2.00;
+            evt = new PushAnimEventDelayed();
+            evt.go = go;
+            evt.eventName = n"close_door_event";
+            GameInstance.GetDelaySystem(gi).DelayScriptableSystemRequest(n"PsychoSquadAvHelperClass", evt, biggestDelay);
+        };
+    };
+
+    func FindValidMaxtacAVSpawnPointAroundCyberpsycho(psycho_pos: Vector4,
+                                                      out spawn_point: Vector4) -> Bool {
+        let NavSys = GameInstance.GetNavigationSystem(this.GetGameInstance());
+        let road_points: array<Vector3> = GetNearbyVehicleSpawnPoints(psycho_pos,
+                                                                      50.00,
+                                                                      10.00,
+                                                                      15.00,
+                                                                      15);
+        let isPointFound: Bool = false;
+        let isPointFallback: Bool = false;
+        let road_points_v4: array<Vector4>;
+        let dummy_v4: Vector4 = new Vector4(0.00, 0.00, 0.00, 0.00);
+        for point in road_points {
+            ArrayPush(road_points_v4, Vector4.Vector3To4(point));
+        };
+
+        if this.FindValidAVSpawnPoint(road_points_v4, spawn_point, isPointFallback)
+        && !isPointFallback {
+            LogChannel(n"DEBUG", "[RandomCyberpsychosEventSystem][FindValidMaxtacAVSpawnPointAroundCyberpsycho]: FOUND VALID ROAD POINT FOR AV");
+            return true;
+        };
+
+        let vehicleNavGenAgent = IntEnum<NavGenAgentSize>(1);
+        let pursuit_points: array<Vector4>;
+        let fallback_pursuit_points: array<Vector4>;
+        NavSys.FindPursuitPointsRange(psycho_pos,
+                                      psycho_pos,
+                                      dummy_v4,
+                                      10.00,
+                                      50.00,
+                                      50,
+                                      false,
+                                      vehicleNavGenAgent,
+                                      pursuit_points,
+                                      fallback_pursuit_points);
+        if this.FindValidAVSpawnPoint(pursuit_points,
+                                      spawn_point,
+                                      isPointFallback) {
+            return true;
+        };
+
+        if !Vector4.IsXYZZero(spawn_point) {
+            return true;
+        };
+
+        return this.FindValidAVSpawnPoint(fallback_pursuit_points,
+                                          spawn_point,
+                                          isPointFallback);
+    };
+
+    func FindValidAVSpawnPoint(points: array<Vector4>,
+                               out valid_point: Vector4,
+                               out isFallback: Bool) -> Bool {
+        let gi: GameInstance = this.GetGameInstance();
+        let fallback_point: Vector4;
+        let isFallbackFound: Bool = false;
+        let player_pos = GetPlayer(gi).GetWorldPosition();
+        for point in points {
+            /* The AV always spawns with a -90 degree rotation from the player
+               so the door faces the player. This isn't perfect though since
+               the AV continues to rotate if the play moves. */
+            let direction = Vector4.Normalize(player_pos - point);
+            direction = Vector4.RotByAngleXY(direction,  -90.00);
+            if this.isPointSuitableForAVSpawn(point, direction, false) {
+                valid_point = point;
+                return true;
+            } else {
+                if !isFallbackFound
+                && this.isPointSuitableForAVSpawn(point, direction, true) {
+                    fallback_point = point;
+                    isFallbackFound = true;
+                };
+            };
+        };
+        if !Vector4.IsXYZZero(fallback_point) {
+            LogChannel(n"WARN", s"[RandomCyberpsychosEventSystem][FindValidAVSpawnPoint] USING FALLBACK POINT \(fallback_point)");
+            valid_point = fallback_point;
+            isFallback = true;
+            return true;
+        };
+
+        LogChannel(n"WARN", s"[RandomCyberpsychosEventSystem][FindValidAVSpawnPoint] FAILED TO FIND AV SPAWNPOINT");
+        return false;
+    };
+
+    func isPointSuitableForAVSpawn(v4: Vector4,
+                                   fwd: Vector4,
+                                   isFallbackDimensions: Bool) -> Bool {
+        let width: Float = 10.00;
+        let length: Float = 10.00;
+        /* The large height is to prevent the AV from spawning directly under a
+           bridge or building. */
+        let height: Float = 30.00;
+        fwd.Z = 0.00;
+        fwd.W = 0.00;
+        v4 = v4 - (fwd * 6.30);
+        if isFallbackDimensions {
+          width = 5.00;
+        };
+        return HasSpaceInFrontOfPoint(v4, fwd, 0.00, width, length, height);
+    };
+
+    func FindCyberpsychoMappin(MappinID: NewMappinID) -> wref<IMappin> {
+        let gi: GameInstance = this.GetGameInstance();
+        let MappinSys = GameInstance.GetMappinSystem(gi);
+        let mappins: array<ref<IMappin>> = MappinSys.GetAllMappins();
+        let pin: wref<IMappin>;
+        for pin in mappins {
+            if Equals(MappinID, pin.GetNewMappinID()) {
+                return pin;
+            };
+        };
+        return pin;
+    };
+
+    func DEBUG_StressTestCyberpsychoChanceRolls(district_name: String,
+                                                start_last_encounter_seconds: Uint32,
+                                                cooldown_seconds: Uint32,
+                                                min_roll_needed: Float) -> Void {
+        let i = 0;
+        let roll: Float = 0.00;
+        let district_chance: Int8;
+        let last_encounter_seconds = start_last_encounter_seconds;
+        district_chance = this.getDistrictSpawnChance(district_name);
+        if district_chance == Cast<Int8>(-1) {
+            LogChannel(n"WARN", s"[RandomCyberpsychosEventSystem][DEBUG_StrestTestCyberpsychoChanceRolls]: INVALID DISTRICTNAME: \(district_name)");
+            return;
+        };
+        while roll < min_roll_needed {
+            if last_encounter_seconds > cooldown_seconds {
+                roll = this.rollCyberPsychoEncounterChance(district_chance,
+                                                           last_encounter_seconds,
+                                                           cooldown_seconds);
+
+            };
+            last_encounter_seconds += cooldown_seconds;
+            i += 1;
+            if i > 20000 {
+                LogChannel(n"WARN", s"[RandomCyberpsychosEventSystem][DEBUG_StressTestCyberpsychoChanceRolls]: COULD NOT GET SUCCESFFUL ROLL");
+                break;
+            };
+        };
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][DEBUG_StressTestCyberpsychoChanceRolls]: TOTAL ROLLS UNTIL SUCCESS: \(i + 1)");
+        let iF = Cast<Uint32>(i);
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][DEBUG_StressTestCyberpsychoChanceRolls]: TOTAL SECONDS UNTIL SUCCESS: \((last_encounter_seconds))");
+        LogChannel(n"DEBUG", s"[RandomCyberpsychosEventSystem][DEBUG_StressTestCyberpsychoChanceRolls]: TOTAL MINUTES UNTIL SUCCESS: \(Cast<Float>(last_encounter_seconds) / 60.00)");
+    };
+}
+
+public class RandomCyberpsychosSettings {
+    @runtimeProperty("ModSettings.mod", "Random Cyberpsychos")
+    @runtimeProperty("ModSettings.displayName", "Cooldown Minutes")
+    @runtimeProperty("ModSettings.description", "Minimum amount of minutes between two cyberpsycho attacks.")
+    @runtimeProperty("ModSettings.step", "5")
+    @runtimeProperty("ModSettings.min", "5")
+    @runtimeProperty("ModSettings.max", "60")
+    @runtimeProperty("ModSettings.dependency", "enabled")
+    let cooldownMinutes: Int32 = 15;
+
+    @runtimeProperty("ModSettings.mod", "Random Cyberpsychos")
+    @runtimeProperty("ModSettings.displayName", "Encounter Multiplier")
+    @runtimeProperty("ModSettings.description", "Modifies how frequently cyberpsycho attacks occur. Higher values increase frequency.")
+    @runtimeProperty("ModSettings.step", "0.01")
+    @runtimeProperty("ModSettings.min", "0.90")
+    @runtimeProperty("ModSettings.max", "1.10")
+    @runtimeProperty("ModSettings.dependency", "enabled")
+    let encounterMultiplier: Float = 1.00;
+}
