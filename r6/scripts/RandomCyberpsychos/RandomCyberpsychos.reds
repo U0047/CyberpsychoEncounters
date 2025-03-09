@@ -1786,7 +1786,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         let unit_as_puppet = unit as ScriptedPuppet;
         let unit_as_g_obj = unit as GameObject;
         if !IsDefined(veh) || veh.IsDestroyed() {
-            FTLogWarning("[RandomCyberpsychosEventSystem][TryMountGroundNCPDUnitToVehicle]: FAILED TO MOUNT UNIT TO POLICE VEHICLE: CAR NOT DRIVABLE");
+            FTLog("[RandomCyberpsychosEventSystem][TryMountGroundNCPDUnitToVehicle]: FAILED TO MOUNT UNIT TO POLICE VEHICLE: CAR NOT DRIVABLE");
             return false;
         };
 
@@ -1794,7 +1794,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         || (unit_as_puppet).IsDead()
         || ScriptedPuppet.IsDefeated((unit_as_g_obj))
         || ScriptedPuppet.IsUnconscious((unit_as_g_obj)) {
-            FTLogWarning("[RandomCyberpsychosEventSystem][TryMountGroundNCPDUnitToVehicle]: FAILED TO MOUNT UNIMT TO POLICE VEHICLE: PUPPET CONDITIONS");
+            FTLog("[RandomCyberpsychosEventSystem][TryMountGroundNCPDUnitToVehicle]: FAILED TO MOUNT UNIMT TO POLICE VEHICLE: FAILED PUPPET CONDITIONS");
             return false;
         };
 
