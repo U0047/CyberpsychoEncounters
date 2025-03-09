@@ -2060,9 +2060,11 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
 
         if success {
             let point = pursuit_points[0];
+            LogChannel(n"DEBUG", s"FOUND PURSUIT POINT: \(point)");
             if !isPointInAnyLoadedSecurityAreaRadius(point, security_zone_filters, true) {
                 return point;
             };
+            LogChannel(n"DEBUG", s"PURSUIT POINT IN SECURITY ZONE!");
         };
 
         return findValidSpawnPointInCube(gi,
