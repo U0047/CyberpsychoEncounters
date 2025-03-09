@@ -698,7 +698,6 @@ class RandomCyberpsychosLastEncounterSecondsDaemon extends DelayDaemon {
     let timeBetweenCalls: Float;
 
     func Start(gi: GameInstance, delay: Float, opt isAffectedByTimeDilation: Bool) -> Void {
-        LogChannel(n"DEBUG", s"TIME BETWEEN CYBERPSYCHO LAST ENCOUNTER CALLS: \(delay)");
         this.timeBetweenCalls = delay;
         super.Start(gi, delay, isAffectedByTimeDilation);
     };
