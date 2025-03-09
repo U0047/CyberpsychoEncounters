@@ -2516,9 +2516,9 @@ public class RandomCyberpsychosSettings {
     @runtimeProperty("ModSettings.mod", "Random Cyberpsychos")
     @runtimeProperty("ModSettings.displayName", "Encounter Multiplier")
     @runtimeProperty("ModSettings.description", "Modifies how frequently cyberpsycho attacks occur. Higher values increase frequency.")
-    @runtimeProperty("ModSettings.step", "0.01")
+    @runtimeProperty("ModSettings.step", "0.05")
     @runtimeProperty("ModSettings.min", "0.90")
-    @runtimeProperty("ModSettings.max", "1.10")
+    @runtimeProperty("ModSettings.max", "1.50")
     @runtimeProperty("ModSettings.dependency", "enabled")
     let encounterMultiplier: Float = 1.00;
 }
