@@ -1399,7 +1399,6 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         let MountingFacility = GameInstance.GetMountingFacility(gi);
         let NavSys = GameInstance.GetNavigationSystem(gi);
         let groundPoliceSquadsEntitySpecs = this.GetCyberpsychoGroundPoliceEntitySpecs();
-        let groundPoliceSquads: array<array<EntityID>>;
         let vehicle_recordID = groundPoliceSquadsEntitySpecs[0][0].recordID;
         let veh_TDBID = TweakDBInterface.GetRecord(vehicle_recordID);
         let veh_record = veh_TDBID as Vehicle_Record;
@@ -1419,9 +1418,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
                                                  spawn_points) {
             FTLogWarning("[RandomCyberpsychosEventSystem][TryStartGroundNCPDResponse]: FAILED TO FIND GROUND PURSUIT VEHICLE POINT, FALLING BACK TO ON FOOT UNITS");
             if this.TryCreateGroundNCPDFallbackUnits(cyberpsycho,
-                                                     groundPoliceSquadsEntitySpecs,
-                                                     groundPoliceSquads) {
-                this.groundPoliceSquads = groundPoliceSquads;
+                                                     groundPoliceSquadsEntitySpecs) {
                 return true;
             };
         };
@@ -1472,16 +1469,14 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
             let attachmentDaemon = new RandomCyberpsychosConvoyVehicleAttachmentDaemon();
             attachmentDaemon.vehicleSquad = cur_vehicle_entity_IDs;
             attachmentDaemon.Start(gi, 0.50, false);
-            ArrayPush(groundPoliceSquads, cur_vehicle_entity_IDs);
+            ArrayPush(this.groundPoliceSquads, cur_vehicle_entity_IDs);
             i = i + 1;
         };
-        this.groundPoliceSquads = groundPoliceSquads;
         return true;
     };
 
     func TryCreateGroundNCPDFallbackUnits(cyberpsycho: ref<NPCPuppet>,
-                                       groundPoliceSquadsEntitySpecs: array<array<ref<DynamicEntitySpec>>>,
-                                       out groundPoliceSquads: array<array<EntityID>>) -> Bool {
+                                       groundPoliceSquadsEntitySpecs: array<array<ref<DynamicEntitySpec>>>) -> Bool {
         let NavSys = GameInstance.GetNavigationSystem(this.GetGameInstance());
         let dynamicEntSys = GameInstance.GetDynamicEntitySystem();
         let psycho_pos = cyberpsycho.GetWorldPosition();
@@ -1551,7 +1546,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
                 ArrayPush(squadIDs, npcID);
                 ii += 1;
             };
-            ArrayPush(groundPoliceSquads, squadIDs);
+            ArrayPush(this.groundPoliceSquads, squadIDs);
             i += 1;
         };
         return true;
