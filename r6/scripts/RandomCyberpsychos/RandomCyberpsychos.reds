@@ -1352,11 +1352,11 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         let start_pos: Vector4;
         let pursuit_points: array<Vector4>;
         let fallback_pursuit_points: array<Vector4>;
-        let zero_v4: Vector4;
+        let player_fwd: Vector4 = GetPlayer(this.GetGameInstance()).GetWorldForward();
         let vehicleNavAgentSize = IntEnum<NavGenAgentSize>(1);
         let success = NavSys.FindPursuitPointsRange(psycho_pos,
                                                     psycho_pos,
-                                                    zero_v4,
+                                                    player_fwd,
                                                     30.00,
                                                     120.00,
                                                     1,
@@ -1489,10 +1489,10 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
             let ii = 1;
             let squad_point_array: array<Vector4>;
             let fallback_squad_point_array: array<Vector4>;
-            let dummy_v4: Vector4;
+            let player_fwd: Vector4 = GetPlayer(this.GetGameInstance()).GetWorldForward();
             let pursuit_points_success = NavSys.FindPursuitPointsRange(psycho_pos,
                                                                        psycho_pos,
-                                                                       dummy_v4,
+                                                                       player_fwd,
                                                                        15.00,
                                                                        50.00,
                                                                        1,
@@ -1515,7 +1515,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
             let fallback_unit_points: array<Vector4>;
             let unit_point_success = NavSys.FindPursuitPointsRange(psycho_pos,
                                                                    psycho_pos,
-                                                                   dummy_v4,
+                                                                   player_fwd,
                                                                    15.00,
                                                                    50.00,
                                                                    ArraySize(squadSpecs),
@@ -2038,12 +2038,12 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
                                             ESecurityAreaType.DANGEROUS,
                                             ESecurityAreaType.DISABLED];
 
-        let zero_v4: Vector4;
+        let player_fwd: Vector4 = GetPlayer(this.GetGameInstance()).GetWorldForward();
         let pursuit_points: array<Vector4>;
         let fallback_pursuit_points: array<Vector4>;
         let success = NavSys.FindPursuitPointsRange(player.GetWorldPosition(),
                                                     player.GetWorldPosition(),
-                                                    zero_v4,
+                                                    player_fwd,
                                                     spawn_point_params.deadzone,
                                                     spawn_point_params.search_size,
                                                     1,
@@ -2360,7 +2360,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         let isPointFound: Bool = false;
         let isPointFallback: Bool = false;
         let road_points_v4: array<Vector4>;
-        let dummy_v4: Vector4 = new Vector4(0.00, 0.00, 0.00, 0.00);
+        let player_fwd: Vector4 = GetPlayer(this.GetGameInstance()).GetWorldForward();
         for point in road_points {
             ArrayPush(road_points_v4, Vector4.Vector3To4(point));
         };
@@ -2376,7 +2376,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         let fallback_pursuit_points: array<Vector4>;
         NavSys.FindPursuitPointsRange(psycho_pos,
                                       psycho_pos,
-                                      dummy_v4,
+                                      player_fwd,
                                       10.00,
                                       50.00,
                                       50,
