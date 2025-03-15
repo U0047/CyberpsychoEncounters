@@ -673,10 +673,10 @@ class CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
 
         if ArraySize(units_to_delete) > 0 {
             let all_units_deleted: Bool;
-            FTLog(s"Deleting units: \(units_to_delete)");
+            FTLog(s"[CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon][Call]: Deleting units: \(units_to_delete)");
             if ArraySize(this.units) == 0 {
                 all_units_deleted = true;
-                FTLog(s"All units deleted");
+                FTLog(s"[CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon][Call]: All units deleted");
             };
             let evt = new CyberpsychoEncountersUnitsDeletionRequestedEvent(this,
                                                                         units_to_delete,
