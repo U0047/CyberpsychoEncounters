@@ -463,56 +463,6 @@ struct CyberpsychoEncountersGroundNCPDLeaveRequestedEvent {//extends Cyberpsycho
     let sender: ref<DelayDaemon>;
 }
 
-/*
-class CyberpsychoEncountersDaemon extends DelayCallback {
-    let gi: GameInstance;
-    let delayID: DelayID;
-    let isActive: Bool = false;
-    let delay: Float = 1.00;
-    let isAffectedByTimeDilation: Bool = false;
-
-    func Start(gi: GameInstance, delay: Float, opt isAffectedByTimeDilation: Bool) -> Void {
-        if this.IsActive() {
-            return;
-        };
-
-        this.gi = gi;
-        this.delay = delay;
-        this.isAffectedByTimeDilation = isAffectedByTimeDilation;
-        let delaySys = GameInstance.GetDelaySystem(gi);
-        let cback_ID = delaySys.DelayCallback(this,
-                                              delay,
-                                              isAffectedByTimeDilation);
-        this.delayID = cback_ID;
-        this.isActive = true;
-    };
-
-    func Stop() -> Void {
-        if !this.IsActive() {
-            return;
-        };
-
-        let delaySys = GameInstance.GetDelaySystem(this.gi);
-        delaySys.CancelCallback(this.delayID);
-        this.isActive = false;
-    };
-
-    func IsActive() -> Bool {
-        return this.isActive;
-    };
-
-    func Repeat() -> Void {
-        if !this.IsActive() {
-            return;
-        };
-        let delaySys = GameInstance.GetDelaySystem(this.gi);
-        this.delayID = delaySys.DelayCallback(this,
-                                              this.delay,
-                                              this.isAffectedByTimeDilation);
-    };
-}
-*/
-
 class CyberpsychoEncountersEventStarterDaemon extends DelayDaemon {
 
     func Call() -> Void {
