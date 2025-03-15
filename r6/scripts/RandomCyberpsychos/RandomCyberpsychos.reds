@@ -999,7 +999,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         SaveLocksManager.RequestSaveLockAdd(gi, n"RandomCyberpsychosEventInProgress");
         FastTravelSystem.AddFastTravelLock(n"RandomCyberpsychosEventInProgress", gi);
         let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
-        FTLog(s"[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: DISTRICT: \(district_name)");
+        FTLog(s"[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: STARTING CYBERPSYCHO EVENT. DISTRICT: \(district_name)");
 
 
         let attachmentDaemon = new UpdateRandomCyberpsychosCyberpsychoAttachmentDaemon();
