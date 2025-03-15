@@ -1131,10 +1131,10 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let delaySys = GameInstance.GetDelaySystem(gi);
         let cyberpsycho = evt.cyberpsycho;
         let psychoStimBroadcaster = cyberpsycho.GetStimBroadcasterComponent();
+        evt.sender.Stop();
         /* This is here so crowd traffic vehicles will enter panic driving.
            For some strange reason they don't enter panic driving for combat
            or terror stim. */
-        evt.sender.Stop();
         psychoStimBroadcaster.AddActiveStimuli(cyberpsycho,
                                                gamedataStimType.VehicleHit,
                                                -1.00,
