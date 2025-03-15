@@ -691,11 +691,9 @@ class RandomCyberpsychosNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
 }
 
 class RandomCyberpsychosLastEncounterSecondsDaemon extends DelayDaemon {
-    let timeBetweenCalls: Float;
 
-    func Start(gi: GameInstance, delay: Float, opt isAffectedByTimeDilation: Bool) -> Void {
-        this.timeBetweenCalls = delay;
-        super.Start(gi, delay, isAffectedByTimeDilation);
+    func Start(gi: GameInstance, opt isAffectedByTimeDilation: Bool) -> Void {
+        super.Start(gi, 120.00, isAffectedByTimeDilation);
     };
 
     func Call() -> Void {
@@ -703,8 +701,7 @@ class RandomCyberpsychosLastEncounterSecondsDaemon extends DelayDaemon {
         let delaySys = GameInstance.GetDelaySystem(this.gi);
         let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
         let cooldown_seconds = psychoSys.GetCooldownSeconds();
-        FTLog(s"[RandomCyberpsychosLastEncounterSecondsDaemon][Call]: time between calls: \(this.timeBetweenCalls)");
-        psychoSys.AddlastEncounterSeconds(Cast<Uint32>(this.timeBetweenCalls));
+        psychoSys.AddlastEncounterSeconds(120u);
         FTLog(s"[RandomCyberpsychosLastEncounterSecondsDaemon][Call]: seconds: \(psychoSys.lastEncounterSeconds)");
         FTLog(s"[RandomCyberpsychosLastEncounterSecondsDaemon][Call]: cooldown seconds: \(cooldown_seconds)");
         if psychoSys.lastEncounterSeconds > cooldown_seconds
@@ -859,7 +856,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
             attachmentDaemon.Start(gi, 0.10, false);
             this.cyberpsychoAttachmentDaemon = attachmentDaemon;
         };
-        this.StartNewMinutesSinceLastEncounterCallback(120.00);
+        this.StartNewMinutesSinceLastEncounterCallback();
     };
 
     private func OnDetatch() -> Void {
@@ -1824,7 +1821,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         };
         preventionSys.TogglePreventionSystem(true);
         this.lastEncounterSeconds = 0u;
-        this.StartNewMinutesSinceLastEncounterCallback(120.00);
+        this.StartNewMinutesSinceLastEncounterCallback();
         SaveLocksManager.RequestSaveLockRemove(gi, n"RandomCyberpsychosEventInProgress");
         FastTravelSystem.RemoveFastTravelLock(n"RandomCyberpsychosEventInProgress", gi);
         this.isCyberpsychoEventInProgress = false;
@@ -1957,11 +1954,11 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         return ground_police_specs;
     };
 
-    func StartNewMinutesSinceLastEncounterCallback(timeBetweenCalls: Float) -> Void {
+    func StartNewMinutesSinceLastEncounterCallback() -> Void {
         let gi: GameInstance = this.GetGameInstance();
         let lastEncounterSecondsDaemon = new RandomCyberpsychosLastEncounterSecondsDaemon();
         this.lastEncounterSecondsDaemon = lastEncounterSecondsDaemon;
-        lastEncounterSecondsDaemon.Start(gi, timeBetweenCalls, true);
+        lastEncounterSecondsDaemon.Start(gi, true);
     };
 
     func AddlastEncounterSeconds(seconds: Uint32) -> Void {
