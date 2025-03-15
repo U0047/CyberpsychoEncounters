@@ -704,10 +704,10 @@ class RandomCyberpsychosLastEncounterSecondsDaemon extends DelayDaemon {
         let delaySys = GameInstance.GetDelaySystem(this.gi);
         let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
         let cooldown_seconds = psychoSys.GetCooldownSeconds();
-        FTLog(s"time between calls: \(this.timeBetweenCalls)");
+        FTLog(s"[RandomCyberpsychosLastEncounterSecondsDaemon][Call]: time between calls: \(this.timeBetweenCalls)");
         psychoSys.AddlastEncounterSeconds(Cast<Uint32>(this.timeBetweenCalls));
-        FTLog(s"seconds: \(psychoSys.lastEncounterSeconds)");
-        FTLog(s"cooldown seconds: \(cooldown_seconds)");
+        FTLog(s"[RandomCyberpsychosLastEncounterSecondsDaemon][Call]: seconds: \(psychoSys.lastEncounterSeconds)");
+        FTLog(s"[RandomCyberpsychosLastEncounterSecondsDaemon][Call]: cooldown seconds: \(cooldown_seconds)");
         if psychoSys.lastEncounterSeconds > cooldown_seconds
         && psychoSys.ShouldStartCyberpsychoEvent() {
             let req = new RandomCyberpsychosEventRequest(this);
