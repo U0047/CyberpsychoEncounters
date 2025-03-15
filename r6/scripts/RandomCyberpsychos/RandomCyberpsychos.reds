@@ -659,7 +659,7 @@ class RandomCyberpsychosNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
                 if !IsDefined(unit)
                 || !unit.IsAttached()
                 || Vector4.DistanceSquared(player_pos, unit_pos) > 62500.00 {
-                    FTLog(s"ADDING UNIT \(unit) TO DELETION LIST");
+                    FTLog(s"Adding unit \(unit) to deletion list");
                     ArrayPush(units_to_delete, unitID);
                     ArrayRemove(this.units[i], unitID);
                 };
@@ -675,10 +675,10 @@ class RandomCyberpsychosNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
 
         if ArraySize(units_to_delete) > 0 {
             let all_units_deleted: Bool;
-            FTLog(s"DELETING UNITS: \(units_to_delete)");
+            FTLog(s"Deleting units: \(units_to_delete)");
             if ArraySize(this.units) == 0 {
                 all_units_deleted = true;
-                FTLog(s"ALL UNITS DELETED");
+                FTLog(s"All units deleted");
             };
             let evt = new RandomCyberpsychosUnitsDeletionRequestedEvent(this,
                                                                         units_to_delete,
@@ -704,10 +704,10 @@ class RandomCyberpsychosLastEncounterSecondsDaemon extends DelayDaemon {
         let delaySys = GameInstance.GetDelaySystem(this.gi);
         let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
         let cooldown_seconds = psychoSys.GetCooldownSeconds();
-        FTLog(s"TIME BETWEEN CALLS: \(this.timeBetweenCalls)");
+        FTLog(s"time between calls: \(this.timeBetweenCalls)");
         psychoSys.AddlastEncounterSeconds(Cast<Uint32>(this.timeBetweenCalls));
-        FTLog(s"SECONDS:\(psychoSys.lastEncounterSeconds)");
-        FTLog(s"COOLDOWN SECONDS:\(cooldown_seconds)");
+        FTLog(s"seconds: \(psychoSys.lastEncounterSeconds)");
+        FTLog(s"cooldown seconds: \(cooldown_seconds)");
         if psychoSys.lastEncounterSeconds > cooldown_seconds
         && psychoSys.ShouldStartCyberpsychoEvent() {
             let req = new RandomCyberpsychosEventRequest(this);
@@ -844,7 +844,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         let gi: GameInstance = this.GetGameInstance();
         this.settings = new RandomCyberpsychosSettings();
         this.districtManager = GetDistrictManager();
-        FTLog(s"[RandomCyberpsychosEventSystem][OnRestored]: UNITS PENDING DELETION? \(this.isUnitDeletionPending)");
+        FTLog(s"[RandomCyberpsychosEventSystem][OnRestored]: Units pending deletion? \(this.isUnitDeletionPending)");
         if this.isUnitDeletionPending {
             let deletionDaemon = new RandomCyberpsychosNCPDGroundPoliceDeletionDaemon();
             deletionDaemon.units = this.groundPoliceSquads;
@@ -852,7 +852,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         };
         if EntityID.IsDefined(this.cyberpsychoID) {
             let psycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID);
-            FTLog("[RandomCyberpsychosEventSystem][OnRestored]: LEFTOVER PSYCHO DEFINED, CREATING ATTACHMENT DAEMON");
+            FTLog("[RandomCyberpsychosEventSystem][OnRestored]: Leftover psycho defined, creating deletion daemon.");
             let attachmentDaemon = new UpdateRandomCyberpsychosCyberpsychoAttachmentDaemon();
             attachmentDaemon.cyberpsychoID = this.cyberpsychoID;
             attachmentDaemon.isFirstAttach = false;
@@ -952,13 +952,13 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
     func RequestStartCyberpsychoEvent(req: RandomCyberpsychosEventRequest) -> Void {
         let gi: GameInstance = this.GetGameInstance();
         req.sender.Stop();
-        FTLog("[RandomCyberpsychosEventSystem][RequestStartCyberpsychoEvent]: EVENT REQUESTED");
+        FTLog("[RandomCyberpsychosEventSystem][RequestStartCyberpsychoEvent]: New event requested");
         let starter = new RandomCyberpsychosEventStarterDaemon();
         starter.Start(gi, 1.00, false);
     };
 
     func TryStartNewCyberpsychoEvent() -> Bool {
-        FTLog("[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: STARTING NEW CYBERPSYCHO EVENT");
+        FTLog("[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: Starting new cyberpsycho event.");
         let gi: GameInstance = this.GetGameInstance();
         let player = GetPlayer(gi);
         let delaySys = GameInstance.GetDelaySystem(gi);
@@ -978,7 +978,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
 
         if IsDefined(player_vehicle) {
             let speed = player_vehicle.GetCurrentSpeed();
-            FTLog(s"[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: PLAYER IN MOVING VEHICLE, SPEED: \(speed))");
+            FTLog(s"[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: player in moving vehicle, speed: \(speed))");
             if speed > AbsF(0.01) {
                 /* GetCyberpsychoSpawnPoint calls
                    AINavigationSystemd.FindPointInBoxForCharacter to find start
@@ -999,7 +999,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         SaveLocksManager.RequestSaveLockAdd(gi, n"RandomCyberpsychosEventInProgress");
         FastTravelSystem.AddFastTravelLock(n"RandomCyberpsychosEventInProgress", gi);
         let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
-        FTLog(s"[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: STARTING CYBERPSYCHO EVENT. DISTRICT: \(district_name)");
+        FTLog(s"[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: Starting cyberpsycho event: \(district_name)");
 
 
         let attachmentDaemon = new UpdateRandomCyberpsychosCyberpsychoAttachmentDaemon();
@@ -1084,7 +1084,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
     };
 
     func OnCyberpsychoAttached(evt: RandomCyberpsychosPsychoAttachedEvent) -> Void {
-        FTLog("[RandomCyberpsychosEventSystem][OnCyberpsychoAttached]: CYBERPSYCHO ATTACHED");
+        FTLog("[RandomCyberpsychosEventSystem][OnCyberpsychoAttached]: Cyberpsycho attached.");
         if evt.isFirstAttach {
             this.OnCyberpsychoFirstAttached(evt);
         };
@@ -1170,7 +1170,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
     };
 
     func OnCyberpsychoDetached(evt: RandomCyberpsychosPsychoDetatchedEvent) -> Void {
-        FTLog("[RandomCyberpsychosEventSystem][OnCyberpsychoDetatched]: CYBERPSYCHO DETATCHED");
+        FTLog("[RandomCyberpsychosEventSystem][OnCyberpsychoDetatched]: Cyberpsycho detatched.");
         let gi: GameInstance = this.GetGameInstance();
         let mappinSys = GameInstance.GetMappinSystem(gi);
         this.cyberpsychoTargetDaemon.Stop();
@@ -1769,7 +1769,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         let unit_as_puppet = unit as ScriptedPuppet;
         let unit_as_g_obj = unit as GameObject;
         if !IsDefined(veh) || veh.IsDestroyed() {
-            FTLog("[RandomCyberpsychosEventSystem][TryMountGroundNCPDUnitToVehicle]: FAILED TO MOUNT UNIT TO POLICE VEHICLE: CAR NOT DRIVABLE");
+            FTLog("[RandomCyberpsychosEventSystem][TryMountGroundNCPDUnitToVehicle]: Failed to mount vehicle. Reason: Vehicle not drivable.");
             return false;
         };
 
@@ -1777,7 +1777,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         || (unit_as_puppet).IsDead()
         || ScriptedPuppet.IsDefeated((unit_as_g_obj))
         || ScriptedPuppet.IsUnconscious((unit_as_g_obj)) {
-            FTLog("[RandomCyberpsychosEventSystem][TryMountGroundNCPDUnitToVehicle]: FAILED TO MOUNT UNIMT TO POLICE VEHICLE: FAILED PUPPET CONDITIONS");
+            FTLog("[RandomCyberpsychosEventSystem][TryMountGroundNCPDUnitToVehicle]: Failed to mount vehicle. Reason: failed puppet preconditions");
             return false;
         };
 
@@ -2040,11 +2040,11 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
 
         if success {
             let point = pursuit_points[0];
-            FTLog(s"FOUND PURSUIT POINT: \(point)");
+            FTLog(s"Found pursuit point: \(point)");
             if !isPointInAnyLoadedSecurityAreaRadius(point, security_zone_filters, true) {
                 return point;
             };
-            FTLog(s"PURSUIT POINT IN SECURITY ZONE!");
+            FTLog(s"Pursuit point in security area!");
         };
 
         return findValidSpawnPointInCube(gi,
@@ -2233,7 +2233,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         if this.isCyberpsychoDefeated() {
             return false;
         };
-        FTLog(s"[RandomCyberpsychosEventSystem][SpawnMaxTacAV]: PSYCHO POSITION: \(psycho.GetWorldPosition())");
+        FTLog(s"[RandomCyberpsychosEventSystem][SpawnMaxTacAV]: Psycho position: \(psycho.GetWorldPosition())");
         let spawn_point: Vector4;
         let spawn_point_v3: Vector3;
         let maxtac_npc_records = [t"Character.maxtac_av_LMG_mb",
@@ -2241,13 +2241,13 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
                                   t"Character.maxtac_av_riffle_ma",
                                   t"Character.maxtac_av_sniper_wa_elite"];
         if !this.FindValidMaxtacAVSpawnPointAroundCyberpsycho(psycho_pos, spawn_point) {
-            FTLogWarning("[RandomCyberpsychosEventSystem][SpawnMaxTacAV]: Could not find point for AV!, STARTING GROUND FALLBACK");
+            FTLogWarning("[RandomCyberpsychosEventSystem][SpawnMaxTacAV]: COULD NOT FIND SPAWNPOINT AV!, STARTING GROUND FALLBACK");
             return this.TryCreateMaxtacFallbackUnits();
         };
         spawn_point_v3 = Vector4.Vector4To3(spawn_point);
         PrevSpawnSystem.RequestAVSpawnAtLocation(t"Vehicle.max_tac_av1",
                                                  spawn_point_v3);
-        FTLog(s"[RandomCyberpsychosEventSystem][SpawnMaxTacAV]: MAXTAC SPAWN POINT: \(spawn_point)");
+        FTLog(s"[RandomCyberpsychosEventSystem][SpawnMaxTacAV]: MaxTac spawn point: \(spawn_point)");
         return true;
     };
 
@@ -2347,7 +2347,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
 
         if this.FindValidAVSpawnPoint(road_points_v4, spawn_point, isPointFallback)
         && !isPointFallback {
-            FTLog("[RandomCyberpsychosEventSystem][FindValidMaxtacAVSpawnPointAroundCyberpsycho]: FOUND VALID ROAD POINT FOR AV");
+            FTLog("[RandomCyberpsychosEventSystem][FindValidMaxtacAVSpawnPointAroundCyberpsycho]: Found valid spawn point for AV.");
             return true;
         };
 
@@ -2471,10 +2471,10 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
                 break;
             };
         };
-        FTLog(s"[RandomCyberpsychosEventSystem][DEBUG_StressTestCyberpsychoChanceRolls]: TOTAL ROLLS UNTIL SUCCESS: \(i + 1)");
+        FTLog(s"[RandomCyberpsychosEventSystem][DEBUG_StressTestCyberpsychoChanceRolls]: Total roles until success \(i + 1)");
         let iF = Cast<Uint32>(i);
-        FTLog(s"[RandomCyberpsychosEventSystem][DEBUG_StressTestCyberpsychoChanceRolls]: TOTAL SECONDS UNTIL SUCCESS: \((last_encounter_seconds))");
-        FTLog(s"[RandomCyberpsychosEventSystem][DEBUG_StressTestCyberpsychoChanceRolls]: TOTAL MINUTES UNTIL SUCCESS: \(Cast<Float>(last_encounter_seconds) / 60.00)");
+        FTLog(s"[RandomCyberpsychosEventSystem][DEBUG_StressTestCyberpsychoChanceRolls]: Total seconds until success \((last_encounter_seconds))");
+        FTLog(s"[RandomCyberpsychosEventSystem][DEBUG_StressTestCyberpsychoChanceRolls]: Total minutes until success \(Cast<Float>(last_encounter_seconds) / 60.00)");
     };
 }
 
