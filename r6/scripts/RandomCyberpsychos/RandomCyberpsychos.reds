@@ -572,7 +572,6 @@ class UpdateRandomCyberpsychosTargetsDaemon extends DelayDaemon {
         psychoSys.SetupNearbyCrowdForCyberpsychoCombat(evt);
         this.Repeat();
     };
-
 }
 
 class RandomCyberpsychosPsychoCombatStartedDaemon extends DelayDaemon {
