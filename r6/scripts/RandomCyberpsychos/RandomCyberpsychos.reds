@@ -2233,7 +2233,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         if this.isCyberpsychoDefeated() {
             return false;
         };
-        FTLog(s"[RandomCyberpsychosEventSystem][SpawnMaxTacAV]: MAXTAC AV PSYCHO POS: \(psycho.GetWorldPosition())");
+        FTLog(s"[RandomCyberpsychosEventSystem][SpawnMaxTacAV]: PSYCHO POSITION: \(psycho.GetWorldPosition())");
         let spawn_point: Vector4;
         let spawn_point_v3: Vector3;
         let maxtac_npc_records = [t"Character.maxtac_av_LMG_mb",
