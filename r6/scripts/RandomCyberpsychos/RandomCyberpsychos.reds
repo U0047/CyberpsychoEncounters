@@ -658,7 +658,6 @@ class CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
                 if !IsDefined(unit)
                 || !unit.IsAttached()
                 || Vector4.DistanceSquared(player_pos, unit_pos) > 62500.00 {
-                    FTLog(s"Adding unit \(unit) to deletion list");
                     ArrayPush(units_to_delete, unitID);
                     ArrayRemove(this.units[i], unitID);
                 };
