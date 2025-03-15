@@ -969,7 +969,7 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         let center: Vector4 = player.GetWorldPosition();
         let player_vehicle = player.GetMountedVehicle() as VehicleObject;
         if this.isCyberpsychoEventInProgress {
-            FTLogWarning("[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: TRIED TO START PSYCHO EVENT WHEN PSYCHO EVENT STILL IN PROGRESS");
+            FTLogError("[RandomCyberpsychosEventSystem][TryStartNewCyberpsychoEvent]: TRIED TO START PSYCHO EVENT WHEN PSYCHO EVENT STILL IN PROGRESS");
             return false;
         };
         if this.isUnitDeletionPending {
