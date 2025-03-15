@@ -2082,6 +2082,10 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                 responseDelays.ncpdDelay = Cast<Int16>(RandRange(90, 120));
                 responseDelays.maxtacDelay = Cast<Int16>(RandRange(75, 125));
                 break;
+            case "Dogtown":
+                responseDelays.ncpdDelay = Cast<Int16>(-1);
+                responseDelays.maxtacDelay = Cast<Int16>(RandRange(90, 140));
+                break;
             default:
                 responseDelays.ncpdDelay = Cast<Int16>(-1);
                 responseDelays.maxtacDelay = Cast<Int16>(-1);
