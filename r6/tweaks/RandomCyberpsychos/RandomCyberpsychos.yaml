@@ -1,9 +1,3 @@
-#
-#TODO Add Shigure "Saratoga arasaka" to weapon pools
-#   TODO remove takedown and nonlethal takedown from base
-#   TODO remove finisher ability (unless under certain threshold)
-#   TODO create buffed weapon records
-
 MinimapMappinUIProfile.CyberpsychoEncountersEvent:
   $base: MinimapMappinUIProfile.Default
   priority: 1
@@ -11,7 +5,6 @@ MinimapMappinUIProfile.CyberpsychoEncountersEvent:
 Mappins.CyberpsychoEncounters_Psycho_Mappin_Definition:
   $type: gamedataMappinDefinition_Record
   possibleVariants: [Mappins.PointOfInterest_HuntForPsychoVariant]
-  #showInWorld: false
   showInWorld: false
   showOnMap: false
   showOnMinimap: true
@@ -138,12 +131,8 @@ Character.CyberpsychoEncounters_Base_Psycho:
     - !append Ability.IsReckless
 
   relaxedSensesPreset: "Alerted"
-
-  #sensePreset: Senses.HugeBoss
-  #sensePreset: Senses.VeryFastDetection
   sensePreset: Senses.SniperCombat100m
   lootDrop: Loot.CyberpsychoEncounters_BaseDropTable
-  #add "CyberpsychoWeapon" to tags
 
 Loot.CyberpsychoEncounters_BaseDropTable:
   $type: gamedataLootTable_Record
@@ -374,9 +363,6 @@ Character.CyberpsychoEncounters_Fast_Ranged_Wraith:
   primaryEquipment: Character.CyberpsychoEncounters_Ranged_Weapon_Maelstrom
   bountyDrawTable: BountyDrawTable.RaffenShiv
 
-# TODO These heavy psychos will have decreased speed
-# and increased armor, decreased flinch / damage reaction,
-# increased melee damage
 Character.CyberpsychoEncounters_Heavy_Shotgunner_Psycho:
   $base: Character.CyberpsychoEncounters_Base_Psycho
   archetypeData: ArchetypeData.ShotgunnerT3
@@ -596,9 +582,6 @@ Character.CyberpsychoEncounters_Heavy_Melee_Voodoo_Boy:
   primaryEquipment: Character.CyberpsychoEncounters_Heavy_Melee_Weapon_Voodoo_Boy
   bountyDrawTable: BountyDrawTable.VoodooBoys
 
-# TODO Maybe we can add charge jump to mantis
-# and melee to make things a bit more
-# interesting
 Character.CyberpsychoEncounters_Sniper_Psycho:
   $base: Character.CyberpsychoEncounters_Base_Psycho
   entityTemplatePath: base\characters\entities\gang\gang__cyberpunk_ma.ent 
@@ -640,10 +623,6 @@ Character.CyberpsychoEncounters_Sniper_Wraith:
   primaryEquipment: Character.CyberpsychoEncounters_Sniper_Weapon_Maelstrom
   bountyDrawTable: BountyDrawTable.RaffenShiv
 
-# TODO will likely have to use the handgun pool
-# (meaning keeping the handgun pool instead of just
-# using ranged) or will have to make a special dual
-# pool
 Character.CyberpsychoEncounters_Dual:
   $base: Character.CyberpsychoEncounters_Base_Psycho
 
@@ -652,10 +631,6 @@ Character.CyberpsychoEncounters_Dual_Valentino:
   affiliation: Factions.Valentinos
   bountyDrawTable: BountyDrawTable.Valentinos
 
-# TODO This will be an extra tanky psycho
-# High health, high damage, low speed
-# HMG, Melee and shotgun
-# bonus points for extra heavy footsteps sfx
 Character.CyberpsychoEncounters_Tank_Psycho:
   $base: Character.CyberpsychoEncounters_Base_Psycho
 
