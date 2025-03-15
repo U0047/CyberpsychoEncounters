@@ -642,8 +642,6 @@ class RandomCyberpsychosNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
     let units: array<array<EntityID>>;
 
     func Call() -> Void {
-        FTLog(s"DELETION DAEMON UNITS: \(this.units)");
-        FTLog(s"DELETION DAEMON UNITS SIZE: \(ArraySize(this.units))");
         let psychoSys = GameInstance.GetRandomCyberpsychosSystem(this.gi);
         let units_to_delete: array<EntityID>;
         let player: ref<PlayerPuppet> = GetPlayer(this.gi);
@@ -774,7 +772,6 @@ class RandomCyberpsychosConvoyVehicleArrivalDaemon extends DelayDaemon  {
         let psycho_pos = this.cyberpsycho.GetWorldPosition();
         if IsDefined(veh_obj)
         && Vector4.DistanceSquared(veh_pos, psycho_pos) < 5625.00 {
-            FTLog("CONVOY VEHICLE < 50 METERS, TRIGGERING ARRIVAL FUNC");
             let evt = new RandomCyberpsychosGroundNCPDConvoyVehicleArrivedEvent(this, this.vehicleSquad);
             evt.sender = this;
             evt.vehicleSquad = this.vehicleSquad;
@@ -870,22 +867,17 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
     };
 
     public cb func OnModSettingsChange() -> Void {
-        FTLog("ON MOD SETTINGS CHANGE");
         this.settings = new RandomCyberpsychosSettings();
         //this.OnCooldownMinutesChanged();
-        FTLog(s"NEW MULT: \(this.settings.encounterMultiplier)");
     };
 
     func GetFrequencyMultiplier() -> Float {
-        FTLog(s"FREQUENCY MULT: \(this.settings.encounterMultiplier)");
         return this.settings.encounterMultiplier;
     };
 
     func OnFrequencyMultiplierChanged(new_val: Float) -> Void {
-        FTLog("CHANGING FREQ MULT");
         //this.encounterMultiplier = new_val;
         this.settings.encounterMultiplier = new_val;
-        FTLog(s"NEW FREQ MULT: \(this.settings.encounterMultiplier)");
     };
 
     func GetEncounterMultiplier() -> Float {
@@ -1170,7 +1162,6 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
 
         if response_delays.maxtacDelay != Cast<Int16>(-1) {
             let maxtacResponseCback = new StartRandomCyberpsychosMaxtacAVResponseCallback();
-            FTLogWarning(s"[RandomCyberpsychosEventSystem][OnCyberpsychoCombatStarted]: QUEUED MAXTAC AV RESPONSE IN \(response_delays) SECONDS");
             let maxtac_delay = Cast<Float>(response_delays.maxtacDelay);
             let cback_ID = delaySys.DelayCallback(maxtacResponseCback,
                                                   maxtac_delay,
@@ -1594,7 +1585,6 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
                     maxtacSpec.position = fallback_maxtac_points[-1];
                 };
             };
-            FTLogWarning("CREATING MAXTAC FALLBACK NPC");
             let npcID = GameInstance.GetDynamicEntitySystem().CreateEntity(maxtacSpec);
             ArrayPush(squadIDs, npcID);
             let npc = GameInstance.FindEntityByID(GetGameInstance(), npcID);
@@ -1644,7 +1634,6 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         arrivalDaemon.cyberpsycho = cyberpsycho;
         arrivalDaemon.vehicleSquad = evt.vehicleSquad;
         arrivalDaemon.Start(gi, 1.00, true);
-        FTLog("CREATING ARRIVAL DAEMON");
     };
 
     func OnGroundNCPDVehicleHasArrived(evt: RandomCyberpsychosGroundNCPDConvoyVehicleArrivedEvent) -> Void {
@@ -1687,7 +1676,6 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         let seat_record = TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatFrontLeft");
         MountEntityToVehicle(npcID, vehID, seat_record, true, false, true);
         (npc as ScriptedPuppet).TryRegisterToPrevention();
-        FTLog(s"CONVOY DRIVER REGISTERED?: \(preventionSys.IsRegistered(npcID))");
         let cyberpsycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID) as NPCPuppet;
         let i = 1;
         while i < ArraySize(evt.vehicleSquad) {
@@ -2014,8 +2002,6 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
             FTLogError(s"[RandomCyberpsychosEventSystem][ShouldStartCyberpsychoEvent]: District \(district_name) not found, exiting.");
             return false;
         };
-        FTLog(s"[RandomCyberpsychosEventSystem][ShouldStartCyberpsychoEvent]: DISTRICT NAME: \(district_name)");
-        FTLog(s"[RandomCyberpsychosEventSystem][ShouldStartCyberpsychoEvent]: DISTRICT CHANCE: \(district_chance)");
         let cooldown_seconds = this.GetCooldownSeconds();
 
         if this.rollCyberPsychoEncounterChance(district_chance,
@@ -2209,19 +2195,14 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
         let preventionSpawnSys = GameInstance.GetPreventionSpawnSystem(gi);
         let last_encounter_seconds = Cast<Float>(last_encounter_seconds);
         let cooldown_seconds = Cast<Float>(cooldown_seconds);
-        FTLog(s"[RandomCyberpsychosEventSystem][rollCyberPsychoEncounterChance] ------------------------------ ROLL ------------------------");
         last_encounter_add = ((last_encounter_seconds - cooldown_seconds) * 0.0004);
         last_encounter_add = MaxF(0.00, MinF(8.00, (last_encounter_add)));
-        FTLog(s"[RandomCyberpsychosEventSystem][rollCyberPsychoEncounterChance]: LAST ENCOUNTER ADDITIVE: \(last_encounter_add)");
-        FTLog(s"[RandomCyberpsychosEventSystem][rollCyberPsychoEncounterChance]: ENCOUNTER MULTIPLIER: \(this.GetEncounterMultiplier())");
         if preventionSpawnSys.IsPlayerOnHighway() {
             highway_mod = 20.00;
         } else {
             highway_mod = 0.00;
         };
-        FTLog(s"[RandomCyberpsychosEventSystem][rollCyberPsychoEncounterChance]: HIGHWAY MODIFIER: \(highway_mod)");
         let rand_factor = RandRangeF(-20.00, 25.00);
-        FTLog(s"[RandomCyberpsychosEventSystem][rollCyberPsychoEncounterChance]: RANDOM FACTOR: \(rand_factor)");
 
         let encounter_mult = this.GetEncounterMultiplier();
         let roll = Cast<Float>(district_chance)
@@ -2229,7 +2210,6 @@ public class RandomCyberpsychosEventSystem extends ScriptableSystem {
                    + rand_factor
                    * encounter_mult
                    - highway_mod;
-        FTLog(s"[RandomCyberpsychosEventSystem][rollCyberPsychoEncounterChance]: PSYCHO EVENT ROLL SCORE: \(roll)");
         return roll;
     };
 
