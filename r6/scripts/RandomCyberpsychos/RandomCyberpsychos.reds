@@ -857,11 +857,12 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                          Vector4.Vector4To2(psycho_front_right),
                                          Vector4.Vector4To2(psycho_back_left),
                                          Vector4.Vector4To2(psycho_back_right)];
-        let ents = GetEntitiesInPrism(query_box,
-                                        psycho_pos.Z - 20.00,
-                                        psycho_pos.Z + 20.00,
-                                        99999,
-                                        [n"ScriptedPuppet", n"vehicleCarBaseObject"]);
+        let ents = GetEntitiesInPrism(GameInstance.GetEntityList(gi),
+                                      query_box,
+                                      psycho_pos.Z - 20.00,
+                                      psycho_pos.Z + 20.00,
+                                      99999,
+                                      [n"ScriptedPuppet", n"vehicleCarBaseObject"]);
         let closest_ent: wref<Entity>;
         let closest_ent_distance: Float = 999999.00;
         for e in ents {
@@ -1044,6 +1045,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func StartPsychoCombatWithNearbyPreventionUnits(cyberpsycho: ref<NPCPuppet>) -> Void {
+        let gi: GameInstance = this.GetGameInstance();
         let magnitude = 150.00;
         let psycho_xform = cyberpsycho.GetWorldTransform();
         let psycho_pos = psycho_xform.GetWorldPosition().ToVector4();
@@ -1058,11 +1060,12 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                          Vector4.Vector4To2(psycho_back_left),
                                          Vector4.Vector4To2(psycho_back_right)];
 
-        let ents = GetEntitiesInPrism(query_box,
-                                        psycho_pos.Z - 20.00,
-                                        psycho_pos.Z + 20.00,
-                                        99999,
-                                        [n"ScriptedPuppet"]);
+        let ents = GetEntitiesInPrism(GameInstance.GetEntityList(gi),
+                                      query_box,
+                                      psycho_pos.Z - 20.00,
+                                      psycho_pos.Z + 20.00,
+                                      99999,
+                                      [n"ScriptedPuppet"]);
         for e in ents {
             let e_as_veh: wref<VehicleObject> = e as VehicleObject;
             if IsDefined(e_as_veh) {
@@ -1196,6 +1199,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             return;
         };
 
+        let gi: GameInstance = this.GetGameInstance();
         let ents: array<wref<Entity>>;
         let attempts = 0;
         let magnitude: Float = 50.00;
@@ -1212,11 +1216,12 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                          Vector4.Vector4To2(psycho_back_left),
                                          Vector4.Vector4To2(psycho_back_right)];
 
-        let ents = GetEntitiesInPrism(query_box,
-                                        psycho_pos.Z - 20.00,
-                                        psycho_pos.Z + 20.00,
-                                        99999,
-                                        [n"ScriptedPuppet", n"vehicleCarBaseObject"]);
+        let ents = GetEntitiesInPrism(GameInstance.GetEntityList(gi),
+                                      query_box,
+                                      psycho_pos.Z - 20.00,
+                                      psycho_pos.Z + 20.00,
+                                      99999,
+                                      [n"ScriptedPuppet", n"vehicleCarBaseObject"]);
         for e in ents {
             let e_as_car: wref<VehicleObject> = (e as VehicleObject);
             let e_as_puppet: wref<ScriptedPuppet> = (e as ScriptedPuppet);
