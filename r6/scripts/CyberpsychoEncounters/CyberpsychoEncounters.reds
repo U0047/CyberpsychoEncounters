@@ -1937,7 +1937,9 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             return false;
         };
 
-        if preventionSys.IsPlayerInQuestArea()
+        let scene_tier = PlayerPuppet.GetSceneTier(player);
+        if scene_tier != 1
+        || preventionSys.IsPlayerInQuestArea()
         || questsContentSystem.IsTokensActivationBlocked()
         || IsPlayerNearQuestMappin(50.00)
         || StatusEffectSystem.ObjectHasStatusEffectWithTag(player, n"NoCombat")
