@@ -10,21 +10,6 @@
     - [Codeware](https://www.nexusmods.com/cyberpunk2077/mods/7780)
     - [Cyber Engine Tweaks (for logging)](https://www.nexusmods.com/cyberpunk2077/mods/107)
 
-### Description
-    THIS IS A TEST BETA FOR IDENTIFYING BUGS, EXPECT BUGS!
-
-    ** NIGHT CITY JUST GOT A LITTLE MORE DANGEROUS. **
-
-    Adds cyberpsychos who wreck havoc on Night City to Cyberpunk 2077's open world.
-
-    **ANYTIME, ANYWHERE**
-
-    Attacks can occur anywhere. Depending on the district, help may be seconds or minutes away. But in Pacifica and the North Industrial District, cyberpsychos cause chaos outside the bounds of the NCPD and MaxTac.
-
-    ** "IF THEY CALL MAXTAC, THEY'RE ALL SCREWED." **
-
-    Watch Night City's apex predators in action.
-
 ### INSTALLATION
     1. Install all dependencies.
     2. Extract the zip file into the main 'Cyberpunk 2077' directory.
@@ -38,9 +23,6 @@
     - This mod has NOT BEEN TESTED with the Phantom Liberty DLC but should be compatible.
     - May be incompatible with mods that make changes to NPC behavior.
     - May be incompatible with mods that make changes to the wanted system and police.
-
-### BUG REPORTS
-    Please report bugs to [this mod's bugs section.](bugs url here) or the [Github Issues page](https://github.com/U0047/CyberpsychoEncounters/issues)
 
 ### PLANNED UPDATES
     - Improved police convoy AI
