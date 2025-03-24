@@ -1773,8 +1773,18 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             deletionDaemon.Start(gi, 1.00, false);
             this.isUnitDeletionPending = true;
         };
+        /* Sometimes players can miss the cyberpsycho event by leaving the area
+           before the psycho attacks. This bypasses the cooldown if that happens
+           so it takes less time for players to experience an actual attack with
+           combat. */
+        if !this.isCyberpsychoCombatStarted {
+            this.lastEncounterSeconds = this.GetCooldownSeconds();
+            FTLog("COMBAT NEVER STARTED, BYPASSING COOLDOWN SECONDS");
+        } else {
+            this.lastEncounterSeconds = 0u;
+        };
+        this.isCyberpsychoCombatStarted = false;
         preventionSys.TogglePreventionSystem(true);
-        this.lastEncounterSeconds = 0u;
         this.StartNewMinutesSinceLastEncounterCallback();
         SaveLocksManager.RequestSaveLockRemove(gi, n"CyberpsychoEncountersEventInProgress");
         FastTravelSystem.RemoveFastTravelLock(n"CyberpsychoEncountersEventInProgress", gi);
