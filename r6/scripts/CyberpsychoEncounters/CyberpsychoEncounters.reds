@@ -2077,22 +2077,22 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             case "Badlands_RedPeaks":
             case "Badlands_VasquezPass":
             case "Badlands_RattlesnakeCreek":
-                return Cast<Int8>(30);
+                return Cast<Int8>(34);
             case "NorthOaks":
             case "Badlands_NorthSunriseOilField":
             case "Badlands_JacksonPlains":
-                return Cast<Int8>(31);
+                return Cast<Int8>(35);
             case "Badlands_RockyRidge":
             case "SouthBadlands":
             case "SouthBadlands_TrailerPark":
-                return Cast<Int8>(32);
+                return Cast<Int8>(36);
             case "Badlands_BiotechnicaFlats":
-                return Cast<Int8>(33);
+                return Cast<Int8>(37);
             case "CityCenter":
             case "CorpoPlaza":
             case "Badlands_SoCalBorderCrossing":
             case "Westbrook":
-                return Cast<Int8>(35);
+                return Cast<Int8>(39);
             case "Arroyo":
             case "Downtown":
             case "Glen":
@@ -2103,19 +2103,19 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             case "VistaDelRey":
             case "Kabuki":
             case "Wellsprings":
-                return Cast<Int8>(36);
+                return Cast<Int8>(40);
             case "Watson":
             case "ArasakaWaterfront":
             case "RanchoCoronado":
             case "SantoDomingo":
-                return Cast<Int8>(37);
+                return Cast<Int8>(41);
             case "Northside":
-                return Cast<Int8>(38);
+                return Cast<Int8>(42);
             case "Pacifica":
             case "Coastview":
             case "WestWindEstate":
             case "Dogtown":
-                return Cast<Int8>(39);
+                return Cast<Int8>(43);
             default:
                 return Cast<Int8>(-1);
         };
