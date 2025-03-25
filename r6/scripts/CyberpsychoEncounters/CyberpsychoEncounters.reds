@@ -918,7 +918,13 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             FTLogError("[CyberpsychoEncountersEventSystem][TryStartNewCyberpsychoEvent]: TRIED TO START PSYCHO EVENT WHEN PSYCHO EVENT STILL IN PROGRESS");
             return false;
         };
+
         if this.isUnitDeletionPending {
+            return false;
+        };
+
+        let scene_tier = PlayerPuppet.GetSceneTier(player);
+        if scene_tier != 1 {
             return false;
         };
 
