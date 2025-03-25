@@ -2430,7 +2430,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                                            cooldown_seconds);
 
             };
-            last_encounter_seconds += cooldown_seconds;
+            last_encounter_seconds += 120u;
             i += 1;
             if i > 20000 {
                 FTLogWarning(s"[CyberpsychoEncountersEventSystem][DEBUG_StressTestCyberpsychoChanceRolls]: COULD NOT GET SUCCESFFUL ROLL");
