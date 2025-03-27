@@ -769,8 +769,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     let eventStarterDaemon: ref<CyberpsychoEncountersEventStarterDaemon>;
 
-    let cyberpsychoDeathDaemon: ref<CyberpsychoEncountersPsychoDeathDaemon>;
-
     let cyberpsychoAttachmentDaemon: ref<UpdateCyberpsychoEncountersCyberpsychoAttachmentDaemon>;
 
     let cyberpsychoCombatStartedDaemon: ref<CyberpsychoEncountersPsychoCombatStartedDaemon>;
@@ -1769,7 +1767,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let delaySys = GameInstance.GetDelaySystem(gi);
         let mappinSys = GameInstance.GetMappinSystem(gi);
         mappinSys.UnregisterMappin(this.cyberpsychoMappinID);
-        this.cyberpsychoDeathDaemon.Stop();
         this.cyberpsychoAttachmentDaemon.Stop();
         GameInstance.GetDynamicEntitySystem().DeleteEntity(this.cyberpsychoID);
         this.cyberpsychoID = new EntityID();
