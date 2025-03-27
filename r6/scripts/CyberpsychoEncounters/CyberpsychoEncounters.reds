@@ -954,6 +954,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
         let attachmentDaemon = new UpdateCyberpsychoEncountersCyberpsychoAttachmentDaemon();
         let psychoID = this.SpawnCyberpsycho(cyberpsychoSpec);
+        FTLog(s"[CyberpsychoEncountersEventSystem][TryStartNewCyberpsychoEvent]: Cyberpsycho entity ID: \(psychoID)");
         attachmentDaemon.cyberpsychoID = psychoID;
         this.cyberpsychoID = psychoID;
         attachmentDaemon.Start(gi, 0.10, false);
@@ -967,6 +968,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func SpawnCyberpsycho(psycho_spec: ref<DynamicEntitySpec>) -> EntityID {
+        FTLog(s"[CyberpsychoEncountersEventSystem][SpawnCyberpsycho]: psycho entity spec: \(psycho_spec)");
         let gi: GameInstance = this.GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
         let dynamicEntSys = GameInstance.GetDynamicEntitySystem();
@@ -1868,6 +1870,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
         let rand_record_index = RandRange(0, ArraySize(pool));
         psychoSpec.recordID = pool[rand_record_index];
+        FTLog(s"[CyberpsychoEncountersEventSystem][GetCyberpsychoEntitySpec]: Cyberpsycho record ID: \(TDBID.ToStringDEBUG(psychoSpec.recordID))");
         return psychoSpec;
     };
 
