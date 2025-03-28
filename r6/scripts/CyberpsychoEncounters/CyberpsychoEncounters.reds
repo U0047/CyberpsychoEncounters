@@ -917,6 +917,11 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             return false;
         };
 
+        if EntityID.IsDefined(this.cyberpsychoID) {
+            FTLogWarning("[CyberpsychoEncountersEventSystem][TryStartNewCyberpsychoEvent]: TRIED TO START PSYCHO EVENT WHEN PREVIOUS CYBERPSYCHO STILL DEFINED");
+            return false;
+        };
+
         if this.isUnitDeletionPending {
             return false;
         };
