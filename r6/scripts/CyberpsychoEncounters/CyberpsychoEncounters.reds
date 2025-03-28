@@ -108,8 +108,7 @@ protected func Update() -> Void {
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
     let cyberpsycho = GameInstance.FindEntityByID(gi, psychoSys.cyberpsychoID) as NPCPuppet;
     let cyberpsychoID = psychoSys.cyberpsychoID;
-    if psychoSys.isCyberpsychoEventInProgress()
-    && (this.m_mappin as StealthMappin).GetGameObject().GetEntityID() == cyberpsychoID {
+    if (this.m_mappin as StealthMappin).GetGameObject().GetEntityID() == cyberpsychoID {
         if !psychoSys.isCyberpsychoDefeated() {
             this.SetForceShow(false);
             this.SetForceHide(true);
