@@ -1096,6 +1096,18 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.isCyberpsychoEventInProgress = true;
         if Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
             preventionSys.TogglePreventionSystem(false);
+        } else {
+            if Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_1) {
+                let preventionForceDeescalateRequest: ref<PreventionForceDeescalateRequest>;
+                preventionForceDeescalateRequest = new PreventionForceDeescalateRequest();
+                let blink_duration = TweakDBInterface.GetFloat(t"PreventionSystem.setup.forcedDeescalationUIStarsBlinkingDurationSeconds", 4.00);
+                preventionForceDeescalateRequest.fakeBlinkingDuration = blink_duration;
+                preventionForceDeescalateRequest.telemetryInfo = "QuestEvent";
+                preventionSys.QueueRequest(preventionForceDeescalateRequest);
+                let DisablePreventionCback = new CyberpsychoEncountersDelayPreventionSystemToggledCallback();
+                DisablePreventionCback.toggle = false;
+                delaySys.DelayCallback(DisablePreventionCback, blink_duration + 0.10, true);
+            };
         };
         /* This is here so crowd traffic vehicles will enter panic driving.
            For some strange reason they don't enter panic driving for combat
