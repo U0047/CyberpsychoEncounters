@@ -964,7 +964,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             preventionSys.TogglePreventionSystem(false);
         };
         this.lastEncounterSecondsDaemon.Stop();
-        this.isCyberpsychoEventInProgress = true;
         return true;
     };
 
@@ -1091,6 +1090,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let cyberpsycho = evt.cyberpsycho;
         let psychoStimBroadcaster = cyberpsycho.GetStimBroadcasterComponent();
         evt.sender.Stop();
+        this.isCyberpsychoEventInProgress = true;
         /* This is here so crowd traffic vehicles will enter panic driving.
            For some strange reason they don't enter panic driving for combat
            or terror stim. */
