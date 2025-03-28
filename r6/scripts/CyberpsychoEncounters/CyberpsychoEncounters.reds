@@ -663,13 +663,14 @@ class CyberpsychoEncountersLastEncounterSecondsDaemon extends DelayDaemon {
     };
 }
 
-class CyberpsychoEncountersDelayPreventionSystemEnabledCallback extends DelayCallback {
+class CyberpsychoEncountersDelayPreventionSystemToggledCallback extends DelayCallback {
+    let toggle: Bool;
 
     func Call() -> Void {
         let gi: GameInstance = GetGameInstance();
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
-        preventionSys.TogglePreventionSystem(true);
+        preventionSys.TogglePreventionSystem(this.toggle);
     };
 }
 
@@ -1674,7 +1675,8 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.cyberpsychoIsDead = true;
         this.cyberpsychoTargetDaemon.Stop();
         this.EndNCPDNpcResponse(this.groundPoliceSquads);
-        let EnablePreventionCback = new CyberpsychoEncountersDelayPreventionSystemEnabledCallback();
+        let EnablePreventionCback = new CyberpsychoEncountersDelayPreventionSystemToggledCallback();
+        EnablePreventionCback.toggle = true;
         delaySys.DelayCallback(EnablePreventionCback, 5.00, true);
         this.lastEncounterSeconds = 0u;
         SaveLocksManager.RequestSaveLockRemove(gi, n"CyberpsychoEncountersEventInProgress");
