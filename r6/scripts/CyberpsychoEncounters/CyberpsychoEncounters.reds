@@ -968,7 +968,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func SpawnCyberpsycho(psycho_spec: ref<DynamicEntitySpec>) -> EntityID {
-        FTLog(s"[CyberpsychoEncountersEventSystem][SpawnCyberpsycho]: psycho entity spec: \(psycho_spec)");
         let gi: GameInstance = this.GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
         let dynamicEntSys = GameInstance.GetDynamicEntitySystem();
