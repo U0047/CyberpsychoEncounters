@@ -960,9 +960,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.cyberpsychoID = psychoID;
         attachmentDaemon.Start(gi, 0.10, false);
         this.cyberpsychoAttachmentDaemon = attachmentDaemon;
-        if Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
-            preventionSys.TogglePreventionSystem(false);
-        };
         this.lastEncounterSecondsDaemon.Stop();
         return true;
     };
@@ -1089,8 +1086,13 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let delaySys = GameInstance.GetDelaySystem(gi);
         let cyberpsycho = evt.cyberpsycho;
         let psychoStimBroadcaster = cyberpsycho.GetStimBroadcasterComponent();
+        let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
+        let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
         evt.sender.Stop();
         this.isCyberpsychoEventInProgress = true;
+        if Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
+            preventionSys.TogglePreventionSystem(false);
+        };
         /* This is here so crowd traffic vehicles will enter panic driving.
            For some strange reason they don't enter panic driving for combat
            or terror stim. */
