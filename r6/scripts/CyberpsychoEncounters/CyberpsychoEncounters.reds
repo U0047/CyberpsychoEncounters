@@ -1664,8 +1664,13 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     func isCyberpsychoDefeated() -> Bool {
         return this.cyberpsychoIsDead;
     };
+
     func isCyberpsychoEventInProgress() -> Bool {
         return this.isCyberpsychoEventInProgress;
+    };
+
+    func isCyberpsychoCombatStarted() -> Bool {
+        return this.isCyberpsychoCombatStarted;
     };
 
     func OnCyberpsychoIsDead(evt: CyberpsychoEncountersCyberpsychoDeathEvent) -> Void {
