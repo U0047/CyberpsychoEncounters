@@ -405,14 +405,14 @@ Character.CyberpsychoEncounters_Heavy_Ranged_Maelstrom:
   $base: Character.CyberpsychoEncounters_Heavy_Ranged_Psycho
   affiliation: Factions.Maelstrom
   entityTemplatePath: base\characters\entities\gang\gang__maelstrom_mb.ent 
-  primaryEquipment: Character.CyberpsychoEncounters_Ranged_Maelstrom
+  primaryEquipment: Character.CyberpsychoEncounters_Ranged_Weapon_Maelstrom
   bountyDrawTable: BountyDrawTable.Maelstrom
 
 Character.CyberpsychoEncounters_Heavy_Ranged_Scav:
   $base: Character.CyberpsychoEncounters_Heavy_Ranged_Psycho
   affiliation: Factions.Scavengers
   entityTemplatePath: base\characters\entities\gang\gang__scavenger_mb.ent 
-  primaryEquipment: Character.CyberpsychoEncounters_Ranged_Scav
+  primaryEquipment: Character.CyberpsychoEncounters_Ranged_Weapon_Scav
   bountyDrawTable: BountyDrawTable.Scavengers
 
 Character.CyberpsychoEncounters_Heavy_Ranged_Sixth_Street:
@@ -433,14 +433,14 @@ Character.CyberpsychoEncounters_Heavy_Ranged_Voodoo_Boy:
   $base: Character.CyberpsychoEncounters_Heavy_Ranged_Psycho
   affiliation: Factions.VoodooBoys
   entityTemplatePath: base\characters\entities\gang\gang__voodoo_ma.ent 
-  primaryEquipment: Character.CyberpsychoEncounters_Ranged_Voodoo_Boy
+  primaryEquipment: Character.CyberpsychoEncounters_Ranged_Weapon_Voodoo_Boy
   bountyDrawTable: BountyDrawTable.VoodooBoys
 
 Character.CyberpsychoEncounters_Heavy_Ranged_Wraith:
   $base: Character.CyberpsychoEncounters_Heavy_Ranged_Psycho
   affiliation: Factions.Wraiths
   entityTemplatePath: base\characters\entities\gang\gang__wraith_mb.ent 
-  primaryEquipment: Character.CyberpsychoEncounters_Ranged_Maelstrom
+  primaryEquipment: Character.CyberpsychoEncounters_Ranged_Weapon_Maelstrom
   bountyDrawTable: BountyDrawTable.RaffenShiv
 
 Character.CyberpsychoEncounters_Heavy_HMG_Psycho:
