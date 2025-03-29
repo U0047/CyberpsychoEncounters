@@ -978,6 +978,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let cyberpsycho = evt.cyberpsycho;
         let cyberpsycho_tt = cyberpsycho.GetTargetTrackerComponent();
         this.cyberpsychoIsDead = false;
+        this.isCyberpsychoEventInProgress = true;
         cyberpsycho_tt.SetThreatBaseMul(GetPlayer(gi), 5.00);
         NPCPuppet.ChangeHighLevelState(cyberpsycho,
                                        gamedataNPCHighLevelState.Alerted);
@@ -1089,7 +1090,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
         evt.sender.Stop();
-        this.isCyberpsychoEventInProgress = true;
+        this.isCyberpsychoCombatStarted = true;
         if Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
             preventionSys.TogglePreventionSystem(false);
         } else {
@@ -1117,7 +1118,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                                gamedataStimType.Terror,
                                                150.00);
         this.StartPsychoCombatWithNearbyPreventionUnits(cyberpsycho);
-        this.isCyberpsychoCombatStarted = true;
         let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
         let response_delays = this.GetCyberpsychoPoliceResponseDelays(district_name);
         if response_delays.ncpdDelay != Cast<Int16>(-1) {
