@@ -2031,15 +2031,9 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                 return point;
             };
             FTLog(s"Pursuit point in security area!");
+        } else {
+            return new Vector4(0.00, 0.00, 0.00, 0.00);
         };
-
-        return findValidSpawnPointInCube(gi,
-                                         center,
-                                         spawn_point_params.search_size,
-                                         player.GetWorldPosition(),
-                                         spawn_point_params.sector_size,
-                                         spawn_point_params.deadzone,
-                                         security_zone_filters);
     };
 
     func GetCyberpsychoPoliceResponseDelays(district_name: String) -> CyberpsychoEncountersDistrictPoliceDelays {
