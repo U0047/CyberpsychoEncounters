@@ -908,7 +908,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
         let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
-        let cyberpsychoSpec = this.GetCyberpsychoEntitySpec(district_name);
         let center: Vector4 = player.GetWorldPosition();
         let player_vehicle = player.GetMountedVehicle() as VehicleObject;
         if this.isCyberpsychoEventInProgress {
@@ -945,16 +944,17 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         };
 
         let psycho_spawn_point = this.getCyberpsychoSpawnPoint(center, district_name);
-        cyberpsychoSpec.position = psycho_spawn_point;
         if Vector4.IsXYZZero(psycho_spawn_point) {
             return false;
         };
+
+        let cyberpsychoSpec = this.GetCyberpsychoEntitySpec(district_name);
+        cyberpsychoSpec.position = psycho_spawn_point;
 
         SaveLocksManager.RequestSaveLockAdd(gi, n"CyberpsychoEncountersEventInProgress");
         FastTravelSystem.AddFastTravelLock(n"CyberpsychoEncountersEventInProgress", gi);
         let district_name = GetCurrentDistrict().GetDistrictRecord().EnumName();
         FTLog(s"[CyberpsychoEncountersEventSystem][TryStartNewCyberpsychoEvent]: Starting cyberpsycho event: \(district_name)");
-
 
         let attachmentDaemon = new UpdateCyberpsychoEncountersCyberpsychoAttachmentDaemon();
         let psychoID = this.SpawnCyberpsycho(cyberpsychoSpec);
