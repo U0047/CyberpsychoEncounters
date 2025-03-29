@@ -1015,7 +1015,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let psychoCombatDaemon = new CyberpsychoEncountersPsychoCombatStartedDaemon();
         psychoCombatDaemon.cyberpsycho = evt.cyberpsycho;
         psychoCombatDaemon.Start(gi, 0.10, true);
-        this.cyberpsychoMappinID = this.RegisterPsychoMappin(evt.cyberpsycho);
     };
 
     func RegisterPsychoMappin(cyberpsycho: ref<NPCPuppet>) -> NewMappinID {
@@ -1109,6 +1108,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         /* This is here so crowd traffic vehicles will enter panic driving.
            For some strange reason they don't enter panic driving for combat
            or terror stim. */
+        this.cyberpsychoMappinID = this.RegisterPsychoMappin(evt.cyberpsycho);
         psychoStimBroadcaster.AddActiveStimuli(cyberpsycho,
                                                gamedataStimType.VehicleHit,
                                                -1.00,
