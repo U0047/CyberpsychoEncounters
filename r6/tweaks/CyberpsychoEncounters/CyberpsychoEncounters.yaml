@@ -73,8 +73,6 @@ CyberpsychoEncounters.Character_Pool_Sixth_Street_Psychos:
   - t"Character.CyberpsychoEncounters_Fast_Melee_Sixth_Street"
   - t"Character.CyberpsychoEncounters_Fast_Shotgunner_Sixth_Street"
   - t"Character.CyberpsychoEncounters_Fast_Ranged_Sixth_Street"
-  - t"Character.CyberpsychoEncounters_Heavy_Shotgunner_Sixth_Street"
-  - t"Character.CyberpsychoEncounters_Heavy_Melee_Sixth_Street"
   - t"Character.CyberpsychoEncounters_Sniper_Sixth_Street"
   - t"Character.CyberpsychoEncounters_Ranged_Sixth_Street"
   - t"Character.CyberpsychoEncounters_Shotgunner_Sixth_Street"
@@ -382,13 +380,6 @@ Character.CyberpsychoEncounters_Heavy_Shotgunner_Scav:
   primaryEquipment: Character.CyberpsychoEncounters_Shotgun_Weapon_Scav
   bountyDrawTable: BountyDrawTable.Scavengers
 
-Character.CyberpsychoEncounters_Heavy_Shotgunner_Sixth_Street:
-  $base: Character.CyberpsychoEncounters_Heavy_Shotgunner_Psycho
-  affiliation: Factions.SixthStreet
-  entityTemplatePath: base\characters\entities\gang\gang__6tstreet_mb.ent 
-  primaryEquipment: Character.CyberpsychoEncounters_Shotgun_Weapon_Sixth_Street
-  bountyDrawTable: BountyDrawTable.SixthStreet
-
 Character.CyberpsychoEncounters_Heavy_Shotgunner_Wraith:
   $base: Character.CyberpsychoEncounters_Heavy_Shotgunner_Psycho
   affiliation: Factions.Wraiths
@@ -414,13 +405,6 @@ Character.CyberpsychoEncounters_Heavy_Ranged_Scav:
   entityTemplatePath: base\characters\entities\gang\gang__scavenger_mb.ent 
   primaryEquipment: Character.CyberpsychoEncounters_Ranged_Weapon_Scav
   bountyDrawTable: BountyDrawTable.Scavengers
-
-Character.CyberpsychoEncounters_Heavy_Ranged_Sixth_Street:
-  $base: Character.CyberpsychoEncounters_Heavy_Ranged_Psycho
-  affiliation: Factions.SixthStreet
-  entityTemplatePath: base\characters\entities\gang\gang__6tstreet_mb.ent 
-  primaryEquipment: Character.CyberpsychoEncounters_Ranged_Sixth_Street
-  bountyDrawTable: BountyDrawTable.SixthStreet
 
 Character.CyberpsychoEncounters_Heavy_Ranged_Valentino:
   $base: Character.CyberpsychoEncounters_Heavy_Ranged_Psycho
@@ -500,13 +484,6 @@ Character.CyberpsychoEncounters_Heavy_LMG_Scav:
   primaryEquipment: Character.CyberpsychoEncounters_LMG_Weapon_Scav
   bountyDrawTable: BountyDrawTable.Scavengers
 
-Character.CyberpsychoEncounters_Heavy_LMG_Sixth_Street:
-  $base: Character.CyberpsychoEncounters_Heavy_LMG_Psycho
-  affiliation: Factions.SixthStreet
-  entityTemplatePath: base\characters\entities\gang\gang__6tstreet_mb.ent
-  primaryEquipment: Character.CyberpsychoEncounters_LMG_Weapon_Maelstrom
-  bountyDrawTable: BountyDrawTable.SixthStreet
-
 Character.CyberpsychoEncounters_Heavy_LMG_Valentino:
   $base: Character.CyberpsychoEncounters_Heavy_LMG_Psycho
   affiliation: Factions.Valentinos
@@ -546,13 +523,6 @@ Character.CyberpsychoEncounters_Heavy_Melee_Scav:
   entityTemplatePath: base\characters\entities\gang\gang__scavenger_mb.ent
   primaryEquipment: Character.CyberpsychoEncounters_Heavy_Melee_Weapon_Scav
   bountyDrawTable: BountyDrawTable.Scavengers
-
-Character.CyberpsychoEncounters_Heavy_Melee_Sixth_Street:
-  $base: Character.CyberpsychoEncounters_Heavy_Melee_Psycho
-  affiliation: Factions.SixthStreet
-  entityTemplatePath: base\characters\entities\gang\gang__6tstreet_mb.ent
-  primaryEquipment: Character.CyberpsychoEncounters_Heavy_Melee_Weapon_Maelstrom
-  bountyDrawTable: BountyDrawTable.SixthStreet
 
 Character.CyberpsychoEncounters_Heavy_Melee_Tyger_Claw:
   $base: Character.CyberpsychoEncounters_Heavy_Melee_Psycho
