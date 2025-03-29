@@ -106,7 +106,6 @@ protected func Activate(context: ScriptExecutionContext) -> Void {
 protected func Update() -> Void {
     let gi: GameInstance = GetGameInstance();
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-    let cyberpsycho = GameInstance.FindEntityByID(gi, psychoSys.cyberpsychoID) as NPCPuppet;
     let cyberpsychoID = psychoSys.cyberpsychoID;
     if (this.m_mappin as StealthMappin).GetGameObject().GetEntityID() == cyberpsychoID {
         if !psychoSys.isCyberpsychoDefeated() {
