@@ -193,12 +193,10 @@ public func CreateMappinUIProfile(mappin: wref<IMappin>,
                                   customData: ref<MappinControllerCustomData>) -> MappinUIProfile {
     let UIProfile = wrappedMethod(mappin, mappinVariant, customData);
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
-    if psychoSys.isCyberpsychoEventInProgress() {
-        if Equals(mappin.GetNewMappinID(), psychoSys.cyberpsychoMappinID) {
-            return MappinUIProfile.Create(r"base\\gameplay\\gui\\widgets\\minimap\\minimap_world_encounter_mappin.inkwidget",
-                                          t"MappinUISpawnProfile.WorldEncounter",
-                                          t"MinimapMappinUIProfile.CyberpsychoEncountersEvent");
-        };
+    if Equals(mappin.GetNewMappinID(), psychoSys.cyberpsychoMappinID) {
+        return MappinUIProfile.Create(r"base\\gameplay\\gui\\widgets\\minimap\\minimap_world_encounter_mappin.inkwidget",
+                                      t"MappinUISpawnProfile.WorldEncounter",
+                                      t"MinimapMappinUIProfile.CyberpsychoEncountersEvent");
     };
     return UIProfile;
 };
