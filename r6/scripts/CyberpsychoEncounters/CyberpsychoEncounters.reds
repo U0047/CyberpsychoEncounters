@@ -27,7 +27,7 @@ public final static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>
 @wrapMethod(VehicleComponent)
 protected cb func OnGridDestruction(evt: ref<VehicleGridDestructionEvent>) -> Bool {
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
-        if psychoSys.isCyberpsychoEventInProgress()
+        if psychoSys.isCyberpsychoCombatStarted()
         || psychoSys.lastEncounterSeconds < Cast<Uint32>(45) {
             if this.GetVehicle().IsPrevention() && evt.rammedOtherVehicle {
                 return false;
@@ -41,7 +41,7 @@ protected cb func OnGridDestruction(evt: ref<VehicleGridDestructionEvent>) -> Bo
 private final func OnMaxTacFearEventDelayed(evt: ref<MaxTacFearEvent>) -> Void {
     let gi: GameInstance = GetGameInstance();
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-    if psychoSys.isCyberpsychoEventInProgress() {
+    if psychoSys.isCyberpsychoCombatStarted() {
         let psycho = GameInstance.FindEntityByID(gi, psychoSys.cyberpsychoID) as GameObject;
         evt.player = psycho;
     };
@@ -53,7 +53,7 @@ private final func OnMaxTacFearEventDelayed(evt: ref<MaxTacFearEvent>) -> Void {
 public final static func GetOffAV(go: ref<GameObject>) -> Void {
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
     let gi: GameInstance = GetGameInstance();
-    if psychoSys.isCyberpsychoEventInProgress() {
+    if psychoSys.isCyberpsychoCombatStarted() {
         let psycho = GameInstance.FindEntityByID(gi, psychoSys.cyberpsychoID) as GameObject;
         psychoSys.GetOffAVPsycho(psycho, go);
         return;
@@ -67,7 +67,7 @@ protected func Activate(context: ScriptExecutionContext) -> Void {
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
     let gi: GameInstance = GetGameInstance();
     let av: ref<GameObject> = ScriptExecutionContext.GetOwner(context);
-    if psychoSys.isCyberpsychoEventInProgress() {
+    if psychoSys.isCyberpsychoCombatStarted() {
         let cyberpsycho = GameInstance.FindEntityByID(gi, psychoSys.cyberpsychoID) as ScriptedPuppet;
         psychoSys.MaxtacDetectPsychoFromAV(av, cyberpsycho);
         return;
@@ -87,7 +87,7 @@ protected func Activate(context: ScriptExecutionContext) -> Void {
     let passengers: array<wref<GameObject>>;
     let gi: GameInstance = go.GetGame();
     let id: EntityID = go.GetEntityID();
-    if psychoSys.isCyberpsychoEventInProgress() {
+    if psychoSys.isCyberpsychoCombatStarted() {
         VehicleComponent.GetAllPassengers(gi, id, false, passengers);
         i = 0;
         while i < ArraySize(passengers) {
@@ -127,7 +127,7 @@ private final func UpdateNPCDetection(percent: Float) -> Void {
     let gi: GameInstance = GetGameInstance();
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
     let preventionSys = GameInstance.GetScriptableSystemsContainer(gi).Get(n"PreventionSystem") as PreventionSystem;
-    if psychoSys.isCyberpsychoEventInProgress() {
+    if psychoSys.isCyberpsychoCombatStarted() {
         if this.m_ownerNPC.IsPrevention()
         && Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
             this.m_isInCombatWithPlayer = false;
@@ -143,7 +143,7 @@ private final func UpdateNameplateColor(isHostile: Bool) -> Void {
     let gi: GameInstance = GetGameInstance();
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
     let preventionSys = GameInstance.GetScriptableSystemsContainer(gi).Get(n"PreventionSystem") as PreventionSystem;
-    if psychoSys.isCyberpsychoEventInProgress() {
+    if psychoSys.isCyberpsychoCombatStarted() {
         if isHostile
         && this.m_ownerNPC.IsPrevention()
         && Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
@@ -159,7 +159,7 @@ private final func UpdateNameplateColor(isHostile: Bool) -> Void {
 @wrapMethod(TargetTrackingExtension)
 protected cb func OnEnemyThreatDetected(th: ref<EnemyThreatDetected>) -> Bool {
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
-    if psychoSys.isCyberpsychoEventInProgress() {
+    if psychoSys.isCyberpsychoCombatStarted() {
         if (th.threat as ScriptedPuppet).IsPlayer()
         && (th.owner as ScriptedPuppet).IsPrevention() {
             return false;
@@ -174,7 +174,7 @@ protected cb func OnEnemyThreatDetected(th: ref<EnemyThreatDetected>) -> Bool {
 @wrapMethod(JoinTrafficInPoliceVehicle)
 protected func Activate(context: ScriptExecutionContext) -> Void {
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
-    if psychoSys.isCyberpsychoEventInProgress() {
+    if psychoSys.isCyberpsychoCombatStarted() {
         let vehID = this.m_vehicle.GetEntityID();
         for squad in psychoSys.groundPoliceSquads {
             if squad[0] == vehID {
@@ -285,7 +285,7 @@ private final func ProcessVehicleHit(hitEvent: ref<gameHitEvent>) -> Void {
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     let gi: GameInstance = GetGameInstance();
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-    if !psychoSys.isCyberpsychoEventInProgress() || psychoSys.isCyberpsychoDefeated() {
+    if !psychoSys.isCyberpsychoCombatStarted() || psychoSys.isCyberpsychoDefeated() {
         return wrappedMethod(evt);
     };
 
@@ -316,7 +316,7 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
 protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     let gi: GameInstance = GetGameInstance();
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-    if !psychoSys.isCyberpsychoEventInProgress() || psychoSys.isCyberpsychoDefeated() {
+    if !psychoSys.isCyberpsychoCombatStarted() || psychoSys.isCyberpsychoDefeated() {
         return wrappedMethod(evt);
     };
 
@@ -347,7 +347,7 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
 public final static func ShouldPreventionSystemReactToDamageDealt(puppet: wref<ScriptedPuppet>) -> Bool {
     let gi: GameInstance = GetGameInstance();
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-    if psychoSys.isCyberpsychoEventInProgress() && !psychoSys.isCyberpsychoDefeated() {
+    if psychoSys.isCyberpsychoCombatStarted() && !psychoSys.isCyberpsychoDefeated() {
         return false;
     };
     return wrappedMethod(puppet);
