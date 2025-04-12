@@ -1789,7 +1789,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
         let delaySys = GameInstance.GetDelaySystem(gi);
         let mappinSys = GameInstance.GetMappinSystem(gi);
-        FTlog("[CyberpsychoEncountersEventSystem][CleanupCyberpsychoEvent]: Cleaning up cyberpsycho event");
+        FTLog("[CyberpsychoEncountersEventSystem][CleanupCyberpsychoEvent]: Cleaning up cyberpsycho event");
         mappinSys.UnregisterMappin(this.cyberpsychoMappinID);
         this.cyberpsychoAttachmentDaemon.Stop();
         GameInstance.GetDynamicEntitySystem().DeleteEntity(this.cyberpsychoID);
