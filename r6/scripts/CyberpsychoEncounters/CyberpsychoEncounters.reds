@@ -1805,7 +1805,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
            combat. */
         if !this.isCyberpsychoCombatStarted {
             this.lastEncounterSeconds = this.GetCooldownSeconds();
-            FTLog("COMBAT NEVER STARTED, BYPASSING COOLDOWN SECONDS");
+            FTLog("[CyberpsychoEncountersEventSystem][CleanupCyberpsychoEvent]: COMBAT NEVER STARTED, BYPASSING COOLDOWN SECONDS");
         } else {
             this.lastEncounterSeconds = 0u;
         };
