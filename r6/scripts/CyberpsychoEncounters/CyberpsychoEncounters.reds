@@ -758,9 +758,9 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     let cyberpsychoMappinID: NewMappinID;
 
-    let cyberpsychoIsDead: Bool = false;
+    persistent let cyberpsychoIsDead: Bool = false;
 
-    let isCyberpsychoCombatStarted: Bool = false;
+    persistent let isCyberpsychoCombatStarted: Bool = false;
 
     let lastEncounterSecondsDaemon: ref<CyberpsychoEncountersLastEncounterSecondsDaemon>;
 
@@ -1804,7 +1804,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
            before the psycho attacks. This bypasses the cooldown if that happens
            so it takes less time for players to experience an actual attack with
            combat. */
-        if !this.isCyberpsychoCombatStarted {
+        if !this.isCyberpsychoCombatStarted() && !this.isCyberpsychoDefeated() {
             this.lastEncounterSeconds = this.GetCooldownSeconds();
             FTLog("[CyberpsychoEncountersEventSystem][CleanupCyberpsychoEvent]: COMBAT NEVER STARTED, BYPASSING COOLDOWN SECONDS");
         } else {
