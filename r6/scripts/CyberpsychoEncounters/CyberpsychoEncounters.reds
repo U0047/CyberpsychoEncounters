@@ -2105,6 +2105,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             case "Badlands_BiotechnicaFlats":
                 return Cast<Int8>(37);
             case "CityCenter":
+            case "CharterHill":
             case "CorpoPlaza":
             case "Badlands_SoCalBorderCrossing":
             case "Westbrook":
