@@ -796,7 +796,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             let attachmentDaemon = new UpdateCyberpsychoEncountersCyberpsychoAttachmentDaemon();
             attachmentDaemon.cyberpsychoID = this.cyberpsychoID;
             attachmentDaemon.isFirstAttach = false;
-            attachmentDaemon.wasPsychoAttached = psycho.IsAttached();
+            attachmentDaemon.wasPsychoAttached = true;
             attachmentDaemon.Start(gi, 0.10, false);
             this.cyberpsychoAttachmentDaemon = attachmentDaemon;
         };
