@@ -20,7 +20,6 @@
     - Minor minimap UI bugs.
 
 ### COMPATIBILITY
-    - This mod has NOT BEEN TESTED with the Phantom Liberty DLC but should be compatible.
     - May be incompatible with mods that make changes to NPC behavior.
     - May be incompatible with mods that make changes to the wanted system and police.
 
