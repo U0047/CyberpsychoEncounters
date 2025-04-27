@@ -2194,11 +2194,17 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let rand_factor = RandRangeF(-20.00, 25.00);
 
         let encounter_mult = this.GetEncounterMultiplier();
+        FTLog(s"[CyberpsychoEncountersEventSystem][rollCyberPsychoEncounterChange]: District points: \(district_chance)");
+        FTLog(s"[CyberpsychoEncountersEventSystem][rollCyberPsychoEncounterChange]: last encounter additive points: \(last_encounter_add)");
+        FTLog(s"[CyberpsychoEncountersEventSystem][rollCyberPsychoEncounterChange]: highway modifer points: \(highway_mod)");
+        FTLog(s"[CyberpsychoEncountersEventSystem][rollCyberPsychoEncounterChange]: Random factor points: \(rand_factor)");
+        FTLog(s"[CyberpsychoEncountersEventSystem][rollCyberPsychoEncounterChange]: Encounter multiplier: \(encounter_mult)");
         let roll = Cast<Float>(district_chance)
                    + last_encounter_add
                    + rand_factor
                    * encounter_mult
                    - highway_mod;
+        FTLog(s"[CyberpsychoEncountersEventSystem][rollCyberPsychoEncounterChange]: Final roll score: \(roll)");
         return roll;
     };
 
