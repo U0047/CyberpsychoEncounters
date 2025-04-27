@@ -6,7 +6,7 @@
     - [redscript](https://www.nexusmods.com/cyberpunk2077/mods/1511)
     - [Mod Settings](https://www.nexusmods.com/cyberpunk2077/mods/4885)
     - [TweakXL](https://www.nexusmods.com/cyberpunk2077/mods/4197)
-    - [Utilities 2077]()
+    - [Utilities 2077](https://www.nexusmods.com/cyberpunk2077/mods/20488)
     - [Codeware](https://www.nexusmods.com/cyberpunk2077/mods/7780)
     - [Cyber Engine Tweaks (for logging)](https://www.nexusmods.com/cyberpunk2077/mods/107)
 
