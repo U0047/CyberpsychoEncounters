@@ -2184,8 +2184,8 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let preventionSpawnSys = GameInstance.GetPreventionSpawnSystem(gi);
         let last_encounter_seconds = Cast<Float>(last_encounter_seconds);
         let cooldown_seconds = Cast<Float>(cooldown_seconds);
-        last_encounter_add = ((last_encounter_seconds - cooldown_seconds) * 0.0004);
-        last_encounter_add = MaxF(0.00, MinF(8.00, (last_encounter_add)));
+        last_encounter_add = ((last_encounter_seconds - cooldown_seconds) * 0.0012);
+        last_encounter_add = MaxF(0.00, MinF(15.00, (last_encounter_add)));
         if preventionSpawnSys.IsPlayerOnHighway() {
             highway_mod = 20.00;
         } else {
