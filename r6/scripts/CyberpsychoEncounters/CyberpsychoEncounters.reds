@@ -926,6 +926,10 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             return false;
         };
 
+        if player_vehicle.IsInAir() {
+            return false;
+        };
+
         if IsDefined(player_vehicle) {
             let speed = player_vehicle.GetCurrentSpeed();
             FTLog(s"[CyberpsychoEncountersEventSystem][TryStartNewCyberpsychoEvent]: player in moving vehicle, speed: \(speed))");
@@ -1966,11 +1970,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let questsContentSystem = GameInstance.GetQuestsContentSystem(gi);
         let previous_psychoID = this.cyberpsychoID;
         if EntityID.IsDefined(previous_psychoID) {
-            return false;
-        };
-
-        let player_vehicle = player.GetMountedVehicle() as VehicleObject;
-        if player_vehicle.IsInAir() {
             return false;
         };
 
