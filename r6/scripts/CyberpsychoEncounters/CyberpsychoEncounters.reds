@@ -780,7 +780,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
 
     private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         this.settings = new CyberpsychoEncountersSettings();
         this.districtManager = GetDistrictManager();
         FTLog(s"[CyberpsychoEncountersEventSystem][OnRestored]: Units pending deletion? \(this.isUnitDeletionPending)");
@@ -836,7 +836,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     func GetCivilianClosestToCyberpsycho(cyberpsycho: ref<NPCPuppet>,
                                          max_distance: Float) -> ref<Entity> {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let cyberpsychoID = cyberpsycho.GetEntityID();
         let psycho_pos = cyberpsycho.GetWorldPosition();
         let psycho_xform = cyberpsycho.GetWorldTransform();
@@ -890,7 +890,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func RequestStartCyberpsychoEvent(req: CyberpsychoEncountersEventRequest) -> Void {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         req.sender.Stop();
         FTLog("[CyberpsychoEncountersEventSystem][RequestStartCyberpsychoEvent]: New event requested");
         let starter = new CyberpsychoEncountersEventStarterDaemon();
@@ -899,7 +899,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     func TryStartNewCyberpsychoEvent() -> Bool {
         FTLog("[CyberpsychoEncountersEventSystem][TryStartNewCyberpsychoEvent]: Starting new cyberpsycho event.");
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let player = GetPlayer(gi);
         let delaySys = GameInstance.GetDelaySystem(gi);
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
@@ -969,14 +969,14 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func SpawnCyberpsycho(psycho_spec: ref<DynamicEntitySpec>) -> EntityID {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
         let dynamicEntSys = GameInstance.GetDynamicEntitySystem();
         return dynamicEntSys.CreateEntity(psycho_spec);
     };
 
     func OnCyberpsychoFirstAttached(evt: CyberpsychoEncountersPsychoAttachedEvent) -> Void {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
         let cyberpsycho = evt.cyberpsycho;
         let cyberpsycho_tt = cyberpsycho.GetTargetTrackerComponent();
@@ -1022,7 +1022,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func RegisterPsychoMappin(cyberpsycho: ref<NPCPuppet>) -> NewMappinID {
-        let mappinSys = GameInstance.GetMappinSystem(this.GetGameInstance());
+        let mappinSys = GameInstance.GetMappinSystem(GetGameInstance());
         let pin_data = new MappinData();
         let dummy_v3: Vector3;
         pin_data.mappinType = t"Mappins.CyberpsychoEncounters_Psycho_Mappin_Definition";
@@ -1040,9 +1040,9 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         if evt.isFirstAttach {
             this.OnCyberpsychoFirstAttached(evt);
         };
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
-        this.cyberpsychoTargetDaemon.Start(this.GetGameInstance(), 0.10, false);
+        this.cyberpsychoTargetDaemon.Start(GetGameInstance(), 0.10, false);
         // Use the regular stealth loot icon if the psycho is defeated.
         if !this.isCyberpsychoDefeated() {
             this.cyberpsychoMappinID = this.RegisterPsychoMappin(evt.cyberpsycho);
@@ -1051,7 +1051,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func StartPsychoCombatWithNearbyPreventionUnits(cyberpsycho: ref<NPCPuppet>) -> Void {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let magnitude = 150.00;
         let psycho_xform = cyberpsycho.GetWorldTransform();
         let psycho_pos = psycho_xform.GetWorldPosition().ToVector4();
@@ -1086,7 +1086,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func OnCyberpsychoCombatStarted(evt: CyberpsychoEncountersPsychoCombatStartedEvent) -> Void {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
         let cyberpsycho = evt.cyberpsycho;
         let psychoStimBroadcaster = cyberpsycho.GetStimBroadcasterComponent();
@@ -1143,10 +1143,10 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     func OnCyberpsychoDetached(evt: CyberpsychoEncountersPsychoDetatchedEvent) -> Void {
         FTLog("[CyberpsychoEncountersEventSystem][OnCyberpsychoDetatched]: Cyberpsycho detatched.");
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let mappinSys = GameInstance.GetMappinSystem(gi);
         this.cyberpsychoTargetDaemon.Stop();
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
         let playerSecondsAwayDaemon = new CyberpsychoEncountersPlayerSecondsAwayDaemon();
         this.playerSecondsAwayDaemon = playerSecondsAwayDaemon;
@@ -1205,7 +1205,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             if !IsDefined(e) || !(e as ScriptedPuppet).IsPrevention() {
                 return false;
             };
-            let gi: GameInstance = this.GetGameInstance();
+            let gi: GameInstance = GetGameInstance();
             let entID = e.GetEntityID();
             let eSenseComp = e.GetSensesComponent();
             let psychoID = cyberpsycho.GetEntityID();
@@ -1223,7 +1223,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             return;
         };
 
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let ents: array<wref<Entity>>;
         let attempts = 0;
         let magnitude: Float = 50.00;
@@ -1274,7 +1274,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             return;
         };
 
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let vehID: EntityID = veh.GetEntityID() ;
         let veh_pos: Vector4 = veh.GetWorldPosition();
         let passengers: array<wref<GameObject>>;
@@ -1312,12 +1312,12 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     func FindNCPDGroundConvoySpawnpoints(cyberpsycho: ref<NPCPuppet>,
                                          veh_fwd: Vector4,
                                          out spawn_points: array<Vector4>) -> Bool {
-        let NavSys = GameInstance.GetNavigationSystem(this.GetGameInstance());
+        let NavSys = GameInstance.GetNavigationSystem(GetGameInstance());
         let psycho_pos: Vector4 = cyberpsycho.GetWorldPosition();
         let start_pos: Vector4;
         let pursuit_points: array<Vector4>;
         let fallback_pursuit_points: array<Vector4>;
-        let player_fwd: Vector4 = GetPlayer(this.GetGameInstance()).GetWorldForward();
+        let player_fwd: Vector4 = GetPlayer(GetGameInstance()).GetWorldForward();
         let vehicleNavAgentSize = IntEnum<NavGenAgentSize>(1);
         let success = NavSys.FindPursuitPointsRange(psycho_pos,
                                                     psycho_pos,
@@ -1358,7 +1358,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         if this.isCyberpsychoDefeated() {
             return false;
         };
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let dynamicEntSys = GameInstance.GetDynamicEntitySystem();
         let delaySys = GameInstance.GetDelaySystem(gi);
         let MountingFacility = GameInstance.GetMountingFacility(gi);
@@ -1370,7 +1370,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let veh_data_package = veh_record.VehDataPackage();
         let vehicle_seats: array<wref<VehicleSeat_Record>>;
         let veh_fwd = groundPoliceSquadsEntitySpecs[0][0].orientation.GetForward();
-        let cyberpsycho = GameInstance.FindEntityByID(this.GetGameInstance(),
+        let cyberpsycho = GameInstance.FindEntityByID(GetGameInstance(),
                                                       this.cyberpsychoID) as NPCPuppet;
         let psycho_pos: Vector4 = cyberpsycho.GetWorldPosition();
         let spawn_points: array<Vector4>;
@@ -1442,7 +1442,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     func TryCreateGroundNCPDFallbackUnits(cyberpsycho: ref<NPCPuppet>,
                                        groundPoliceSquadsEntitySpecs: array<array<ref<DynamicEntitySpec>>>) -> Bool {
-        let NavSys = GameInstance.GetNavigationSystem(this.GetGameInstance());
+        let NavSys = GameInstance.GetNavigationSystem(GetGameInstance());
         let dynamicEntSys = GameInstance.GetDynamicEntitySystem();
         let psycho_pos = cyberpsycho.GetWorldPosition();
         let i = 0;
@@ -1454,7 +1454,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             let ii = 1;
             let squad_point_array: array<Vector4>;
             let fallback_squad_point_array: array<Vector4>;
-            let player_fwd: Vector4 = GetPlayer(this.GetGameInstance()).GetWorldForward();
+            let player_fwd: Vector4 = GetPlayer(GetGameInstance()).GetWorldForward();
             let pursuit_points_success = NavSys.FindPursuitPointsRange(psycho_pos,
                                                                        psycho_pos,
                                                                        player_fwd,
@@ -1518,7 +1518,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func TryCreateMaxtacFallbackUnits() -> Bool {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let NavSys = GameInstance.GetNavigationSystem(gi);
         let MaxTacRecords: array<TweakDBID> = [t"Character.maxtac_av_mantis_wa",
                                                t"Character.maxtac_av_LMG_mb",
@@ -1592,7 +1592,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func OnGroundNCPDConvoyVehicleAttached(evt: CyberpsychoEncountersGroundNCPDConvoyVehicleAttachedEvent) -> Void {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let vehID = evt.vehicleSquad[0];
         let veh_obj = GameInstance.FindEntityByID(gi, vehID) as WheeledObject;
         let delaySys = GameInstance.GetDelaySystem(gi);
@@ -1616,7 +1616,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             return;
         };
 
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
         let vehID = evt.vehicleSquad[0];
@@ -1677,7 +1677,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func OnCyberpsychoIsDead(evt: CyberpsychoEncountersCyberpsychoDeathEvent) -> Void {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let npc: wref<ScriptedPuppet>;
         let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
@@ -1707,7 +1707,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func EndNCPDNpcResponse(groundPoliceSquads: array<array<EntityID>>) -> Void {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
         let reactionSystem: ref<ReactionSystem> = GameInstance.GetReactionSystem(gi);
@@ -1744,7 +1744,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                          vehID: EntityID,
                                          slot: CName) -> Bool {
 
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let veh: ref<VehicleObject> = GameInstance.FindEntityByID(gi, vehID) as VehicleObject;
         let unit_as_puppet = unit as ScriptedPuppet;
         let unit_as_g_obj = unit as GameObject;
@@ -1787,7 +1787,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func CleanupCyberpsychoEvent() -> Void {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
         let delaySys = GameInstance.GetDelaySystem(gi);
@@ -1950,7 +1950,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func StartNewMinutesSinceLastEncounterCallback() -> Void {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let lastEncounterSecondsDaemon = new CyberpsychoEncountersLastEncounterSecondsDaemon();
         this.lastEncounterSecondsDaemon = lastEncounterSecondsDaemon;
         lastEncounterSecondsDaemon.Start(gi, true);
@@ -1961,7 +1961,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func ShouldStartCyberpsychoEvent() -> Bool {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
         let player: ref<PlayerPuppet> = GetPlayer(gi);
@@ -2013,7 +2013,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     func getCyberpsychoSpawnPoint(center: Vector4,
                                   district_name: String) -> Vector4 {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let NavSys = GameInstance.GetNavigationSystem(gi);
         let player: ref<PlayerPuppet> = GetPlayer(gi);
         let spawn_point_params = this.getDistrictSpawnPointSearchParams(district_name);
@@ -2022,7 +2022,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                             ESecurityAreaType.DANGEROUS,
                                             ESecurityAreaType.DISABLED];
 
-        let player_fwd: Vector4 = GetPlayer(this.GetGameInstance()).GetWorldForward();
+        let player_fwd: Vector4 = GetPlayer(GetGameInstance()).GetWorldForward();
         let pursuit_points: array<Vector4>;
         let fallback_pursuit_points: array<Vector4>;
         let success = NavSys.FindPursuitPointsRange(player.GetWorldPosition(),
@@ -2188,7 +2188,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                         cooldown_seconds: Uint32) -> Float {
         let highway_mod: Float;
         let last_encounter_add: Float;
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let preventionSpawnSys = GameInstance.GetPreventionSpawnSystem(gi);
         let last_encounter_seconds = Cast<Float>(last_encounter_seconds);
         let cooldown_seconds = Cast<Float>(cooldown_seconds);
@@ -2229,7 +2229,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func SpawnMaxTacAV() -> Bool {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let PrevSpawnSystem = GameInstance.GetPreventionSpawnSystem(gi);
         let psycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID);
         let psycho_pos: Vector4 = psycho.GetWorldPosition();
@@ -2334,7 +2334,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     func FindValidMaxtacAVSpawnPointAroundCyberpsycho(psycho_pos: Vector4,
                                                       out spawn_point: Vector4) -> Bool {
-        let NavSys = GameInstance.GetNavigationSystem(this.GetGameInstance());
+        let NavSys = GameInstance.GetNavigationSystem(GetGameInstance());
         let road_points: array<Vector3> = GetNearbyVehicleSpawnPoints(psycho_pos,
                                                                       50.00,
                                                                       10.00,
@@ -2343,7 +2343,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let isPointFound: Bool = false;
         let isPointFallback: Bool = false;
         let road_points_v4: array<Vector4>;
-        let player_fwd: Vector4 = GetPlayer(this.GetGameInstance()).GetWorldForward();
+        let player_fwd: Vector4 = GetPlayer(GetGameInstance()).GetWorldForward();
         for point in road_points {
             ArrayPush(road_points_v4, Vector4.Vector3To4(point));
         };
@@ -2385,7 +2385,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     func FindValidAVSpawnPoint(points: array<Vector4>,
                                out valid_point: Vector4,
                                out isFallback: Bool) -> Bool {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let fallback_point: Vector4;
         let isFallbackFound: Bool = false;
         let player_pos = GetPlayer(gi).GetWorldPosition();
@@ -2435,7 +2435,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func FindCyberpsychoMappin(MappinID: NewMappinID) -> wref<IMappin> {
-        let gi: GameInstance = this.GetGameInstance();
+        let gi: GameInstance = GetGameInstance();
         let MappinSys = GameInstance.GetMappinSystem(gi);
         let mappins: array<ref<IMappin>> = MappinSys.GetAllMappins();
         let pin: wref<IMappin>;
