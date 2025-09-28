@@ -926,15 +926,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             return false;
         };
 
-        // use RadialMenuHelper.IsWeaponsBlocked since it works as a test for
-        // if the player is in an apartment and some other safe areas but not
-        // other interiors where weapons may be blocked (like bars) which we
-        // still want to allow cyberpsycho attacks to happen in.
-        if RadialMenuHelper.IsWeaponsBlocked(player) {
-            FTLog("[CyberpsychoEncountersEventSystem][TryStartNewCyberpsychoEvent]: Cannot start cyberpsycho event, RadialMenuHelper.IsWeaponsBlocked");
-            return false;
-        };
-
         if IsDefined(player_vehicle) {
             let speed = player_vehicle.GetCurrentSpeed();
             FTLog(s"[CyberpsychoEncountersEventSystem][TryStartNewCyberpsychoEvent]: player in moving vehicle, speed: \(speed))");
@@ -1994,6 +1985,16 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         || Equals(player.m_securityAreaTypeE3HACK, ESecurityAreaType.SAFE) {
             return false;
         };
+
+        // use RadialMenuHelper.IsWeaponsBlocked since it works as a test for
+        // if the player is in an apartment and some other safe areas but not
+        // other interiors where weapons may be blocked (like bars) which we
+        // still want to allow cyberpsycho attacks to happen in.
+        if RadialMenuHelper.IsWeaponsBlocked(player) {
+            FTLog("[CyberpsychoEncountersEventSystem][ShouldStartCyberpsychoEvent]: Cannot start cyberpsycho event, RadialMenuHelper.IsWeaponsBlocked");
+            return false;
+        };
+
 
         district_chance = this.getDistrictSpawnChance(district_name);
         if district_chance == Cast<Int8>(-1) {
