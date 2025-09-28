@@ -530,7 +530,6 @@ class CyberpsychoEncountersPsychoCombatStartedDaemon extends DelayDaemon {
             let psychoStatesComp = this.cyberpsycho.GetStatesComponent();
             let upper_body = psychoStatesComp.GetCurrentUpperBodyState();
 
-            // TODO add grenade throw by wrapping AIThrowGrenade
             if Equals(upper_body, gamedataNPCUpperBodyState.Attack)
             || Equals(upper_body, gamedataNPCUpperBodyState.ChargedAttack)
             || this.HasCyberpsychoWeaponBeenFired() {
