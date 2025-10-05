@@ -1047,6 +1047,9 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         if !this.isCyberpsychoDefeated() {
             this.cyberpsychoMappinID = this.RegisterPsychoMappin(evt.cyberpsycho);
         };
+        if IsDefined(this.playerSecondsAwayDaemon) {
+            this.playerSecondsAwayDaemon.Stop();
+        };
         this.playerSecondsAway = Cast<Uint16>(0u);
     };
 
