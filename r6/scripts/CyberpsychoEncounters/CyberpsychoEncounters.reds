@@ -492,8 +492,8 @@ class UpdateCyberpsychoEncountersCyberpsychoAttachmentDaemon extends DelayDaemon
         } else {
             if !this.wasPsychoAttached {
                 let evt = new CyberpsychoEncountersPsychoAttachedEvent(this,
-                                                                    psycho,
-                                                                    this.isFirstAttach);
+                                                                       psycho,
+                                                                       this.isFirstAttach);
                 evt.sender = this;
                 psychoSys.OnCyberpsychoAttached(evt);
 
