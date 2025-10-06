@@ -467,6 +467,8 @@ class CyberpsychoEncountersEventStarterDaemon extends DelayDaemon {
         if psychoSys.TryStartNewCyberpsychoEvent() {
             this.Stop();
         } else {
+            this.delay = RandRangeF(1.00, 30.00);
+            FTLog(s"[CyberpsychoEncountersEventStarterDaemon][Call]: delaying event. Next Delay: \(this.delay)");
             this.Repeat();
         };
     };
