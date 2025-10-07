@@ -986,6 +986,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         StimBroadcasterComponent.BroadcastStim(cyberpsycho,
                                                gamedataStimType.SpreadFear,
                                                10.00);
+        this.cyberpsychoMappinID = this.RegisterPsychoMappin(evt.cyberpsycho);
         let closest_ent = this.GetCivilianClosestToCyberpsycho(evt.cyberpsycho, 30.00);
         let closest_as_veh = closest_ent as VehicleObject;
         if IsDefined(closest_as_veh) {
@@ -1054,9 +1055,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                                                        this.cyberpsychoDeathListener);
         this.cyberpsychoTargetDaemon.Start(GetGameInstance(), 0.10, false);
         // Use the regular stealth loot icon if the psycho is defeated.
-        if !this.isCyberpsychoDefeated() {
-            this.cyberpsychoMappinID = this.RegisterPsychoMappin(evt.cyberpsycho);
-        };
         if IsDefined(this.playerSecondsAwayDaemon) {
             this.playerSecondsAwayDaemon.Stop();
         };
