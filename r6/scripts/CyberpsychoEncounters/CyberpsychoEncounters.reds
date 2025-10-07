@@ -195,7 +195,7 @@ public func CreateMappinUIProfile(mappin: wref<IMappin>,
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
     if Equals(mappin.GetNewMappinID(), psychoSys.cyberpsychoMappinID) {
         return MappinUIProfile.Create(r"base\\gameplay\\gui\\widgets\\minimap\\minimap_world_encounter_mappin.inkwidget",
-                                      t"MappinUISpawnProfile.WorldEncounter",
+                                      t"MappinUISpawnProfile.Stealth",
                                       t"MinimapMappinUIProfile.CyberpsychoEncountersEvent");
     };
     return UIProfile;
