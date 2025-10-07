@@ -414,8 +414,7 @@ struct CyberpsychoEncountersNewTargetsRequestedEvent {//extends CyberpsychoEncou
     let cyberpsycho: ref<NPCPuppet>;
 }
 
-struct CyberpsychoEncountersPsychoCombatStartedEvent{//extends CyberpsychoEncountersDaemonEvent {
-    let sender: ref<DelayDaemon>;
+struct CyberpsychoEncountersPsychoCombatStartedEvent {
     let cyberpsycho: ref<NPCPuppet>;
 }
 
@@ -519,34 +518,6 @@ class UpdateCyberpsychoEncountersTargetsDaemon extends DelayDaemon {
                                                                  this.cyberpsycho);
         psychoSys.SetupNearbyCrowdForCyberpsychoCombat(evt);
         this.Repeat();
-    };
-}
-
-class CyberpsychoEncountersPsychoCombatStartedDaemon extends DelayDaemon {
-    let cyberpsycho: ref<NPCPuppet>;
-
-    func Call() -> Void {
-        /* Trying to access NpcStateComponent will crash game if the
-           NPC is not attached. */
-        if this.cyberpsycho.IsAttached() {
-            let psychoStatesComp = this.cyberpsycho.GetStatesComponent();
-            let upper_body = psychoStatesComp.GetCurrentUpperBodyState();
-
-            if Equals(upper_body, gamedataNPCUpperBodyState.Attack)
-            || Equals(upper_body, gamedataNPCUpperBodyState.ChargedAttack)
-            || this.HasCyberpsychoWeaponBeenFired() {
-                let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(this.gi);
-                let evt = new CyberpsychoEncountersPsychoCombatStartedEvent(this, this.cyberpsycho);
-                psychoSys.OnCyberpsychoCombatStarted(evt);
-            };
-        };
-        this.Repeat();
-    };
-
-    func HasCyberpsychoWeaponBeenFired() -> Bool {
-        return IsDefined(GameObject.GetActiveWeapon(this.cyberpsycho))
-        && GameObject.GetActiveWeapon(this.cyberpsycho).GetMagazinePercentage() < 1.00
-        && GameObject.GetActiveWeapon(this.cyberpsycho).GetMagazinePercentage() >= 0.00;
     };
 }
 
@@ -789,11 +760,13 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     let cyberpsychoAttachmentDaemon: ref<UpdateCyberpsychoEncountersCyberpsychoAttachmentDaemon>;
 
-    let cyberpsychoCombatStartedDaemon: ref<CyberpsychoEncountersPsychoCombatStartedDaemon>;
-
     let cyberpsychoTargetDaemon: ref<UpdateCyberpsychoEncountersTargetsDaemon>;
 
     let cyberpsychoDeathListener: ref<CyberpsychoDeathListener>;
+
+    let cyberpsychoAmmoCallback: ref<CallbackHandle>;
+
+    let cyberpsychoUpperBodyCallback: ref<CallbackHandle>;
 
     let playerSecondsAwayDaemon: ref<CyberpsychoEncountersPlayerSecondsAwayDaemon>;
 
@@ -1003,6 +976,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let gi: GameInstance = GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
         let cyberpsycho = evt.cyberpsycho;
+        let cyberpsychoID = evt.cyberpsycho.GetEntityID();
         let cyberpsycho_tt = cyberpsycho.GetTargetTrackerComponent();
         this.cyberpsychoIsDead = false;
         this.isCyberpsychoEventInProgress = true;
@@ -1037,9 +1011,18 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.cyberpsychoTargetDaemon = psychoTargetsDaemon;
         psychoTargetsDaemon.Start(gi, 0.10, false);
 
-        let psychoCombatDaemon = new CyberpsychoEncountersPsychoCombatStartedDaemon();
-        psychoCombatDaemon.cyberpsycho = evt.cyberpsycho;
-        psychoCombatDaemon.Start(gi, 0.10, true);
+        let BBSys = GameInstance.GetBlackboardSystem(gi);
+        let psychoWeaponBB = GameObject.GetActiveWeapon(cyberpsycho).GetSharedData();
+        let psychoPuppetStateBB = cyberpsycho.GetPuppetStateBlackboard();
+        let bb_defs = GetAllBlackboardDefs();
+        this.cyberpsychoAmmoCallback = psychoWeaponBB.RegisterListenerUint(bb_defs.Weapon.MagazineAmmoCount,
+                                                                           this,
+                                                                           n"OnCyberpsychoMagazineCountChange",
+                                                                           true);
+        this.cyberpsychoUpperBodyCallback = psychoPuppetStateBB.RegisterListenerInt(bb_defs.PuppetState.UpperBody,
+                                                                                    this,
+                                                                                    n"OnCyberpsychoUpperBodyStateChange",
+                                                                                    true);
     };
 
     func RegisterPsychoMappin(cyberpsycho: ref<NPCPuppet>) -> NewMappinID {
@@ -1115,15 +1098,69 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         };
     };
 
+    cb func OnCyberpsychoUpperBodyStateChange(value: Int32) {
+        // NPCs can enter the "Shoot" upper body state before actually firing.
+        // We only want the to trigger the combat started state *after* shots
+        // have been fired by the cyberpsycho.
+        let gi: GameInstance = GetGameInstance();
+        if value == 9 {
+            let cyberpsycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID) as NPCPuppet;
+            let psycho_weapon = GameObject.GetActiveWeapon(cyberpsycho);
+            if psycho_weapon.GetMagazineAmmoCount() < psycho_weapon.GetMagazineCapacity() {
+                let evt = new CyberpsychoEncountersPsychoCombatStartedEvent(cyberpsycho);
+                this.OnCyberpsychoCombatStarted(evt);
+            } else {
+                let psychoWeaponBB = psycho_weapon.GetSharedData();
+                let ammo_count_bb_def = GetAllBlackboardDefs().Weapon.MagazineAmmoCount;
+                this.cyberpsychoAmmoCallback = psychoWeaponBB.RegisterListenerUint(ammo_count_bb_def,
+                                                                                   this,
+                                                                                   n"OnCyberpsychoMagazineCountChange",
+                                                                                   true);
+            };
+        };
+
+        if value == 2 || value == 3 {
+            let cyberpsycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID) as NPCPuppet;
+
+            let evt = new CyberpsychoEncountersPsychoCombatStartedEvent(cyberpsycho);
+            this.OnCyberpsychoCombatStarted(evt);
+        };
+    };
+
+    cb func OnCyberpsychoMagazineCountChange(count: Uint32) -> Void {
+        let gi: GameInstance = GetGameInstance();
+        let BBSys = GameInstance.GetBlackboardSystem(gi);
+        let cyberpsycho = GameInstance.FindEntityByID(GetGameInstance(), this.cyberpsychoID) as NPCPuppet;
+        let psychoWeaponBB = GameObject.GetActiveWeapon(cyberpsycho).GetSharedData();
+        let psycho_weapon_cap = psychoWeaponBB.GetUint(GetAllBlackboardDefs().Weapon.MagazineAmmoCapacity);
+        if count < psycho_weapon_cap {
+            let evt = new CyberpsychoEncountersPsychoCombatStartedEvent(cyberpsycho);
+            this.OnCyberpsychoCombatStarted(evt);
+        };
+    };
+
     func OnCyberpsychoCombatStarted(evt: CyberpsychoEncountersPsychoCombatStartedEvent) -> Void {
+        // Blackboard listeners seems to sometimes fire multiple times very
+        // quickly so we need to prevent multiple calls to callback.
+        if Equals(this.isCyberpsychoCombatStarted, true) {
+            return;
+        };
+        this.isCyberpsychoCombatStarted = true;
+
         let gi: GameInstance = GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
-        let cyberpsycho = evt.cyberpsycho;
-        let psychoStimBroadcaster = cyberpsycho.GetStimBroadcasterComponent();
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
-        evt.sender.Stop();
-        this.isCyberpsychoCombatStarted = true;
+        let BBSys = GameInstance.GetBlackboardSystem(gi);
+        let cyberpsycho = evt.cyberpsycho;
+        let cyberpsychoID = evt.cyberpsycho.GetEntityID();
+        let psychoStimBroadcaster = cyberpsycho.GetStimBroadcasterComponent();
+        let weaponBB = GetAllBlackboardDefs().Weapon;
+        let psychoWeaponBB = BBSys.GetLocalInstanced(cyberpsychoID, weaponBB);
+        let puppetStateBB = GetAllBlackboardDefs().PuppetState;
+        let psychoPuppetStateBB = cyberpsycho.GetPuppetStateBlackboard();
+        psychoWeaponBB.UnregisterListenerUint(weaponBB.MagazineAmmoCount, this.cyberpsychoAmmoCallback);
+        psychoWeaponBB.UnregisterListenerInt(puppetStateBB.UpperBody, this.cyberpsychoUpperBodyCallback);
         if Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
             preventionSys.TogglePreventionSystem(false);
         } else {
