@@ -1898,6 +1898,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         if evt.allUnitsDeleted {
             evt.sender.Stop();
             this.isUnitDeletionPending = false;
+            ArrayClear(this.groundPoliceSquads);
         };
 
         for unitID in evt.units {
