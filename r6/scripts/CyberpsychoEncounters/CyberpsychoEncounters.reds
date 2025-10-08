@@ -400,9 +400,6 @@ struct CyberpsychoEncountersPsychoCombatStartedEvent {
     let cyberpsycho: ref<NPCPuppet>;
 }
 
-struct CyberpsychoEncountersGroundNCPDConvoyRequestedEvent {//extends CyberpsychoEncountersDaemonEvent {
-}
-
 struct CyberpsychoEncountersGroundNCPDConvoyVehicleAttachedEvent {//extends CyberpsychoEncountersDaemonEvent {
     let sender: ref<DelayDaemon>;
     let vehicleSquad: array<EntityID>;
