@@ -390,11 +390,6 @@ struct CyberpsychoEncountersDaemonEvent {
 }
 */
 
-struct CyberpsychoEncountersPsychoAttachedEvent { //extends CyberpsychoEncountersDaemonEvent {
-    let sender: ref<DelayDaemon>;
-    let cyberpsycho: ref<NPCPuppet>;
-    let isFirstAttach: Bool;
-}
 
 struct CyberpsychoEncountersPsychoDetatchedEvent {//extends CyberpsychoEncountersDaemonEvent {
     let sender: ref<DelayDaemon>;
@@ -489,11 +484,7 @@ class UpdateCyberpsychoEncountersCyberpsychoAttachmentDaemon extends DelayDaemon
             };
         } else {
             if !this.wasPsychoAttached {
-                let evt = new CyberpsychoEncountersPsychoAttachedEvent(this,
-                                                                       psycho,
-                                                                       this.isFirstAttach);
-                evt.sender = this;
-                psychoSys.OnCyberpsychoAttached(evt);
+                psychoSys.OnCyberpsychoAttached(psycho, this.isFirstAttach);
 
                 this.isFirstAttach = false;
                 this.wasPsychoAttached = true;
@@ -967,11 +958,11 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         return dynamicEntSys.CreateEntity(psycho_spec);
     };
 
-    func OnCyberpsychoFirstAttached(evt: CyberpsychoEncountersPsychoAttachedEvent) -> Void {
+    func OnCyberpsychoFirstAttached(cyberpsycho: ref<NPCPuppet>) -> Void {
         let gi: GameInstance = GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
-        let cyberpsycho = evt.cyberpsycho;
-        let cyberpsychoID = evt.cyberpsycho.GetEntityID();
+        let cyberpsycho = cyberpsycho;
+        let cyberpsychoID = cyberpsycho.GetEntityID();
         let cyberpsycho_tt = cyberpsycho.GetTargetTrackerComponent();
         this.cyberpsychoIsDead = false;
         this.isCyberpsychoEventInProgress = true;
@@ -981,11 +972,11 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         StimBroadcasterComponent.BroadcastStim(cyberpsycho,
                                                gamedataStimType.SpreadFear,
                                                10.00);
-        let closest_ent = this.GetCivilianClosestToCyberpsycho(evt.cyberpsycho, 30.00);
+        let closest_ent = this.GetCivilianClosestToCyberpsycho(cyberpsycho, 30.00);
         let closest_as_veh = closest_ent as VehicleObject;
         if IsDefined(closest_as_veh) {
             this.SetupCrowdVehiclePassengersForPsychoCombat(closest_as_veh,
-                                                            evt.cyberpsycho,
+                                                            cyberpsycho,
                                                             false);
         } else {
             let closest_as_puppet = closest_ent as ScriptedPuppet;
@@ -1002,7 +993,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         };
 
         let psychoTargetsDaemon = new UpdateCyberpsychoEncountersTargetsDaemon();
-        psychoTargetsDaemon.cyberpsycho = evt.cyberpsycho;
+        psychoTargetsDaemon.cyberpsycho = cyberpsycho;
         this.cyberpsychoTargetDaemon = psychoTargetsDaemon;
         psychoTargetsDaemon.Start(gi, 0.10, false);
 
@@ -1034,16 +1025,16 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                                   dummy_v3);
     };
 
-    func OnCyberpsychoAttached(evt: CyberpsychoEncountersPsychoAttachedEvent) -> Void {
+    func OnCyberpsychoAttached(cyberpsycho: ref<NPCPuppet>, isFirstAttach: Bool) -> Void {
         FTLog("[CyberpsychoEncountersEventSystem][OnCyberpsychoAttached]: Cyberpsycho attached.");
-        if evt.isFirstAttach {
-            this.OnCyberpsychoFirstAttached(evt);
+        if isFirstAttach {
+            this.OnCyberpsychoFirstAttached(cyberpsycho);
         };
         let gi: GameInstance = GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
-        let cyberpsycho_stats_ID = Cast<StatsObjectID>(evt.cyberpsycho.GetEntityID());
+        let cyberpsycho_stats_ID = Cast<StatsObjectID>(cyberpsycho.GetEntityID());
         this.cyberpsychoDeathListener = new CyberpsychoDeathListener();
-        this.cyberpsychoDeathListener.cyberpsycho = evt.cyberpsycho;
+        this.cyberpsychoDeathListener.cyberpsycho = cyberpsycho;
         GameInstance.GetStatPoolsSystem(gi).RequestRegisteringListener(cyberpsycho_stats_ID,
                                                                        gamedataStatPoolType.Health,
                                                                        this.cyberpsychoDeathListener);
@@ -1052,7 +1043,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         if !this.isCyberpsychoDefeated() {
             let mappinSys = GameInstance.GetMappinSystem(gi);
             mappinSys.UnregisterMappin(this.cyberpsychoMappinID);
-            this.cyberpsychoMappinID = this.RegisterPsychoMappin(evt.cyberpsycho);
+            this.cyberpsychoMappinID = this.RegisterPsychoMappin(cyberpsycho);
         };
         if IsDefined(this.playerSecondsAwayDaemon) {
             this.playerSecondsAwayDaemon.Stop();
