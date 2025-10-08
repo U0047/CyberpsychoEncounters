@@ -391,11 +391,6 @@ struct CyberpsychoEncountersDaemonEvent {
 */
 
 
-struct CyberpsychoEncountersPsychoDetatchedEvent {//extends CyberpsychoEncountersDaemonEvent {
-    let sender: ref<DelayDaemon>;
-    let cyberpsychoID: EntityID;
-}
-
 struct CyberpsychoEncountersNewTargetsRequestedEvent {//extends CyberpsychoEncountersDaemonEvent {
     let sender: ref<DelayDaemon>;
     let cyberpsycho: ref<NPCPuppet>;
@@ -472,9 +467,7 @@ class UpdateCyberpsychoEncountersCyberpsychoAttachmentDaemon extends DelayDaemon
         let psycho = (GameInstance.FindEntityByID(this.gi, this.cyberpsychoID) as NPCPuppet);
         if !IsDefined(psycho) || !psycho.IsAttached() {
             if this.wasPsychoAttached {
-                let evt = new CyberpsychoEncountersPsychoDetatchedEvent(this, this.cyberpsychoID);
-                evt.sender = this;
-                psychoSys.OnCyberpsychoDetached(evt);
+                psychoSys.OnCyberpsychoDetached();
                 this.wasPsychoAttached = false;
             };
         } else {
@@ -1191,7 +1184,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         };
     };
 
-    func OnCyberpsychoDetached(evt: CyberpsychoEncountersPsychoDetatchedEvent) -> Void {
+    func OnCyberpsychoDetached() -> Void {
         FTLog("[CyberpsychoEncountersEventSystem][OnCyberpsychoDetatched]: Cyberpsycho detatched.");
         let gi: GameInstance = GetGameInstance();
         let mappinSys = GameInstance.GetMappinSystem(gi);
