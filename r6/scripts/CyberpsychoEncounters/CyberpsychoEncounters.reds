@@ -390,12 +390,6 @@ struct CyberpsychoEncountersDaemonEvent {
 }
 */
 
-
-struct CyberpsychoEncountersNewTargetsRequestedEvent {//extends CyberpsychoEncountersDaemonEvent {
-    let sender: ref<DelayDaemon>;
-    let cyberpsycho: ref<NPCPuppet>;
-}
-
 struct CyberpsychoEncountersPsychoCombatStartedEvent {
     let cyberpsycho: ref<NPCPuppet>;
 }
@@ -486,10 +480,7 @@ class UpdateCyberpsychoEncountersTargetsDaemon extends DelayDaemon {
         let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(this.gi);
         let delaySys = GameInstance.GetDelaySystem(this.gi);
         let player = GetPlayer(this.gi);
-        let psycho = this.cyberpsycho;
-        let evt = new CyberpsychoEncountersNewTargetsRequestedEvent(this,
-                                                                 this.cyberpsycho);
-        psychoSys.SetupNearbyCrowdForCyberpsychoCombat(evt);
+        psychoSys.SetupNearbyCrowdForCyberpsychoCombat(this.cyberpsycho);
         this.Repeat();
     };
 }
@@ -1258,8 +1249,8 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             return true;
     };
 
-    func SetupNearbyCrowdForCyberpsychoCombat(evt: CyberpsychoEncountersNewTargetsRequestedEvent) -> Void {
-        if !IsDefined(evt.cyberpsycho) || !evt.cyberpsycho.IsAttached() {
+    func SetupNearbyCrowdForCyberpsychoCombat(cyberpsycho: ref<NPCPuppet>) -> Void {
+        if !IsDefined(cyberpsycho) || !cyberpsycho.IsAttached() {
             return;
         };
 
@@ -1267,7 +1258,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let ents: array<wref<Entity>>;
         let attempts = 0;
         let magnitude: Float = 50.00;
-        let psycho_xform = evt.cyberpsycho.GetWorldTransform();
+        let psycho_xform = cyberpsycho.GetWorldTransform();
         let psycho_pos = psycho_xform.GetWorldPosition().ToVector4();
         let psycho_front = (psycho_xform.GetForward() * magnitude);
         let psycho_right = (psycho_xform.GetRight() * magnitude);
@@ -1291,14 +1282,14 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             let e_as_puppet: wref<ScriptedPuppet> = (e as ScriptedPuppet);
             if IsDefined(e_as_puppet) {
                 this.TrySettingUpCrowdEntityForPsychoCombat(e_as_puppet,
-                                                            evt.cyberpsycho,
+                                                            cyberpsycho,
                                                             this.isCyberpsychoCombatStarted,
                                                             this.groundPoliceSquads);
             } else {
 
                 if IsDefined(e_as_car) {
                     this.SetupCrowdVehiclePassengersForPsychoCombat(e_as_car,
-                                                                    evt.cyberpsycho,
+                                                                    cyberpsycho,
                                                                     this.isCyberpsychoCombatStarted,
                                                                     this.groundPoliceSquads);
                 };
