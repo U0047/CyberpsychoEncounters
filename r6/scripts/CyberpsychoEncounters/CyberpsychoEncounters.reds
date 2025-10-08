@@ -394,11 +394,6 @@ struct CyberpsychoEncountersPsychoCombatStartedEvent {
     let cyberpsycho: ref<NPCPuppet>;
 }
 
-struct CyberpsychoEncountersGroundNCPDConvoyVehicleArrivedEvent {//extends CyberpsychoEncountersDaemonEvent {
-    let sender: ref<DelayDaemon>;
-    let vehicleSquad: array<EntityID>;
-}
-
 struct CyberpsychoEncountersStartMaxtacAVRequest {//extends CyberpsychoEncountersDaemonEvent {
     let sender: ref<DelayCallback>;
 }
@@ -662,10 +657,7 @@ class CyberpsychoEncountersConvoyVehicleArrivalDaemon extends DelayDaemon  {
         let psycho_pos = this.cyberpsycho.GetWorldPosition();
         if IsDefined(veh_obj)
         && Vector4.DistanceSquared(veh_pos, psycho_pos) < 5625.00 {
-            let evt = new CyberpsychoEncountersGroundNCPDConvoyVehicleArrivedEvent(this, this.vehicleSquad);
-            evt.sender = this;
-            evt.vehicleSquad = this.vehicleSquad;
-            psychoSys.OnGroundNCPDVehicleHasArrived(evt);
+            psychoSys.OnGroundNCPDVehicleHasArrived(this.vehicleSquad);
         };
         this.Repeat();
     };
@@ -1634,8 +1626,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         arrivalDaemon.Start(gi, 1.00, true);
     };
 
-    func OnGroundNCPDVehicleHasArrived(evt: CyberpsychoEncountersGroundNCPDConvoyVehicleArrivedEvent) -> Void {
-        evt.sender.Stop();
+    func OnGroundNCPDVehicleHasArrived(vehicleSquad: array<EntityID>) -> Void {
         if this.isCyberpsychoDefeated() {
             return;
         };
@@ -1643,7 +1634,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let gi: GameInstance = GetGameInstance();
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
-        let vehID = evt.vehicleSquad[0];
+        let vehID = vehicleSquad[0];
         let veh = GameInstance.FindEntityByID(gi, vehID);
         let passengers: array<wref<GameObject>>;
         /* If the driver is spawned earlier than here, such as when the actual
@@ -1676,8 +1667,8 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         (npc as ScriptedPuppet).TryRegisterToPrevention();
         let cyberpsycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID) as NPCPuppet;
         let i = 1;
-        while i < ArraySize(evt.vehicleSquad) {
-            let unit = evt.vehicleSquad[i];
+        while i < ArraySize(vehicleSquad) {
+            let unit = vehicleSquad[i];
             let npc = (GameInstance.FindEntityByID(gi, unit) as ScriptedPuppet);
             TargetTrackingExtension.InjectThreat(npc,
                                                  cyberpsycho,
