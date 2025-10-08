@@ -394,11 +394,6 @@ struct CyberpsychoEncountersPsychoCombatStartedEvent {
     let cyberpsycho: ref<NPCPuppet>;
 }
 
-struct CyberpsychoEncountersGroundNCPDConvoyVehicleAttachedEvent {//extends CyberpsychoEncountersDaemonEvent {
-    let sender: ref<DelayDaemon>;
-    let vehicleSquad: array<EntityID>;
-}
-
 struct CyberpsychoEncountersGroundNCPDConvoyVehicleArrivedEvent {//extends CyberpsychoEncountersDaemonEvent {
     let sender: ref<DelayDaemon>;
     let vehicleSquad: array<EntityID>;
@@ -640,8 +635,7 @@ class CyberpsychoEncountersConvoyVehicleAttachmentDaemon extends DelayDaemon {
             this.Repeat();
             return;
         };
-        let evt = new CyberpsychoEncountersGroundNCPDConvoyVehicleAttachedEvent(this, this.vehicleSquad);
-        psychoSys.OnGroundNCPDConvoyVehicleAttached(evt);
+        psychoSys.OnGroundNCPDConvoyVehicleAttached(this.vehicleSquad);
     };
 }
 
@@ -1622,12 +1616,11 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         veh.GetAIComponent().SetInitCmd(drive_cmd);
     };
 
-    func OnGroundNCPDConvoyVehicleAttached(evt: CyberpsychoEncountersGroundNCPDConvoyVehicleAttachedEvent) -> Void {
+    func OnGroundNCPDConvoyVehicleAttached(vehicleSquad: array<EntityID>) -> Void {
         let gi: GameInstance = GetGameInstance();
-        let vehID = evt.vehicleSquad[0];
+        let vehID = vehicleSquad[0];
         let veh_obj = GameInstance.FindEntityByID(gi, vehID) as WheeledObject;
         let delaySys = GameInstance.GetDelaySystem(gi);
-        evt.sender.Stop();
         let sirenDelayEvent = new VehicleSirenDelayEvent();
         sirenDelayEvent.lights = true;
         sirenDelayEvent.sounds = true;
@@ -1637,7 +1630,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.SendCyberpsychoChaseCommand(cyberpsycho, veh_obj);
         let arrivalDaemon = new CyberpsychoEncountersConvoyVehicleArrivalDaemon();
         arrivalDaemon.cyberpsycho = cyberpsycho;
-        arrivalDaemon.vehicleSquad = evt.vehicleSquad;
+        arrivalDaemon.vehicleSquad = vehicleSquad;
         arrivalDaemon.Start(gi, 1.00, true);
     };
 
