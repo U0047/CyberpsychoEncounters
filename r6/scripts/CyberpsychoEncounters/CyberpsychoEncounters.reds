@@ -395,11 +395,6 @@ struct CyberpsychoEncountersPsychoDetatchedEvent {//extends CyberpsychoEncounter
     let sender: ref<DelayDaemon>;
     let cyberpsychoID: EntityID;
 }
-struct CyberpsychoEncountersEventStartedEvent {//extends CyberpsychoEncountersDaemonEvent {
-    let sender: ref<DelayDaemon>;
-    let psychoID: EntityID;
-    let isHeatActive: Bool;
-}
 
 struct CyberpsychoEncountersNewTargetsRequestedEvent {//extends CyberpsychoEncountersDaemonEvent {
     let sender: ref<DelayDaemon>;
