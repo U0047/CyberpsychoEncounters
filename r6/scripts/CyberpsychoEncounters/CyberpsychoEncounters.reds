@@ -389,9 +389,6 @@ struct CyberpsychoEncountersDaemonEvent {
     let sender: ref<CyberpsychoEncountersDaemonEvent>;
 }
 */
-struct CyberpsychoEncountersEventRequest {//extends CyberpsychoEncountersDaemonEvent {
-    let sender: ref<DelayDaemon>;
-}
 
 struct CyberpsychoEncountersPsychoAttachedEvent { //extends CyberpsychoEncountersDaemonEvent {
     let sender: ref<DelayDaemon>;
@@ -643,9 +640,7 @@ class CyberpsychoEncountersLastEncounterSecondsDaemon extends DelayDaemon {
         FTLog(s"[CyberpsychoEncountersLastEncounterSecondsDaemon][Call]: cooldown seconds: \(cooldown_seconds)");
         if psychoSys.lastEncounterSeconds > cooldown_seconds
         && psychoSys.ShouldStartCyberpsychoEvent() {
-            let req = new CyberpsychoEncountersEventRequest(this);
-            req.sender = this;
-            psychoSys.RequestStartCyberpsychoEvent(req);
+            psychoSys.RequestStartCyberpsychoEvent();
         };
         this.Repeat();
     };
@@ -886,9 +881,9 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         return closest_ent;
     };
 
-    func RequestStartCyberpsychoEvent(req: CyberpsychoEncountersEventRequest) -> Void {
+    func RequestStartCyberpsychoEvent() -> Void {
         let gi: GameInstance = GetGameInstance();
-        req.sender.Stop();
+        this.lastEncounterSecondsDaemon.Stop();
         FTLog("[CyberpsychoEncountersEventSystem][RequestStartCyberpsychoEvent]: New event requested");
         let starter = new CyberpsychoEncountersEventStarterDaemon();
         starter.Start(gi, 1.00, false);
