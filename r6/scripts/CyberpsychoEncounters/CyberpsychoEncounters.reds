@@ -535,7 +535,6 @@ class CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
         };
         this.Repeat();
     };
-
 }
 
 class CyberpsychoEncountersLastEncounterSecondsDaemon extends DelayDaemon {
