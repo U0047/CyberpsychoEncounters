@@ -390,10 +390,6 @@ struct CyberpsychoEncountersDaemonEvent {
 }
 */
 
-struct CyberpsychoEncountersCyberpsychoDeathEvent {
-    let cyberpsycho: ref<NPCPuppet>;
-}
-
 struct StartCyberpsychoEncountersDaemonEvent {//extends CyberpsychoEncountersDaemonEvent {
     let sender: ref<DelayDaemon>;
 }
@@ -479,16 +475,14 @@ public class CyberpsychoDeathListener extends ScriptStatPoolsListener {
   protected cb func OnStatPoolCustomLimitReached(value: Float) -> Bool {
     let gi: GameInstance = GetGameInstance();
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-    let evt = new CyberpsychoEncountersCyberpsychoDeathEvent(this.cyberpsycho);
-    psychoSys.OnCyberpsychoIsDead(evt);
+    psychoSys.OnCyberpsychoIsDead(this.cyberpsycho);
   };
 
   protected cb func OnStatPoolMinValueReached(value: Float) -> Bool {
     let gi: GameInstance = GetGameInstance();
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
     if !psychoSys.isCyberpsychoDefeated() {
-        let evt = new CyberpsychoEncountersCyberpsychoDeathEvent(this.cyberpsycho);
-        psychoSys.OnCyberpsychoIsDead(evt);
+        psychoSys.OnCyberpsychoIsDead(this.cyberpsycho);
     };
   };
 }
@@ -1661,7 +1655,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         return this.isCyberpsychoCombatStarted;
     };
 
-    func OnCyberpsychoIsDead(evt: CyberpsychoEncountersCyberpsychoDeathEvent) -> Void {
+    func OnCyberpsychoIsDead(cyberpsycho: wref<NPCPuppet>) -> Void {
         let gi: GameInstance = GetGameInstance();
         let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
@@ -1669,15 +1663,15 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let delaySys = GameInstance.GetDelaySystem(gi);
         let mappinSys = GameInstance.GetMappinSystem(gi);
         let attitudeSys = GameInstance.GetAttitudeSystem(gi);
-        let psychoStimBroacaster = evt.cyberpsycho.GetStimBroadcasterComponent();
-        let cyberpsycho_stats_ID = Cast<StatsObjectID>(evt.cyberpsycho.GetEntityID());
+        let psychoStimBroacaster = cyberpsycho.GetStimBroadcasterComponent();
+        let cyberpsycho_stats_ID = Cast<StatsObjectID>(cyberpsycho.GetEntityID());
         mappinSys.UnregisterMappin(this.cyberpsychoMappinID);
         attitudeSys.SetAttitudeGroupRelationfromTweakPersistent(t"Attitudes.Group_Police",
                                                                 t"Attitudes.Group_Civilian",
                                                                 EAIAttitude.AIA_Neutral);
-        psychoStimBroacaster.RemoveActiveStimuliByName(evt.cyberpsycho,
+        psychoStimBroacaster.RemoveActiveStimuliByName(cyberpsycho,
                                                        gamedataStimType.VehicleHit);
-        psychoStimBroacaster.RemoveActiveStimuliByName(evt.cyberpsycho,
+        psychoStimBroacaster.RemoveActiveStimuliByName(cyberpsycho,
                                                        gamedataStimType.Terror);
         GameInstance.GetStatPoolsSystem(gi).RequestUnregisteringListener(cyberpsycho_stats_ID,
                                                                          gamedataStatPoolType.Health,
