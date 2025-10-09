@@ -394,12 +394,6 @@ struct CyberpsychoEncountersCyberpsychoDeathEvent {
     let cyberpsycho: ref<NPCPuppet>;
 }
 
-struct CyberpsychoEncountersUnitsDeletionRequestedEvent {//extends CyberpsychoEncountersDaemonEvent {
-    let sender: ref<DelayDaemon>;
-    let units: array<EntityID>;
-    let allUnitsDeleted: Bool;
-}
-
 struct StartCyberpsychoEncountersDaemonEvent {//extends CyberpsychoEncountersDaemonEvent {
     let sender: ref<DelayDaemon>;
 }
@@ -557,11 +551,7 @@ class CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
                 all_units_deleted = true;
                 FTLog(s"[CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon][Call]: All units deleted");
             };
-            let evt = new CyberpsychoEncountersUnitsDeletionRequestedEvent(this,
-                                                                        units_to_delete,
-                                                                        all_units_deleted);
-            evt.sender = this;
-            psychoSys.OnGroundNCPDUnitsDeletionRequested(evt);
+            psychoSys.OnGroundNCPDUnitsDeletionRequested(units_to_delete, all_units_deleted);
         };
         this.Repeat();
     };
@@ -1819,14 +1809,14 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.lastEncounterSecondsDaemon.Start(gi, 1.00, true);
     };
 
-    func OnGroundNCPDUnitsDeletionRequested(evt: CyberpsychoEncountersUnitsDeletionRequestedEvent) -> Void {
-        if evt.allUnitsDeleted {
-            evt.sender.Stop();
+    func OnGroundNCPDUnitsDeletionRequested(units_to_delete: array<EntityID>,
+                                            all_units_deleted: Bool) -> Void {
+        if all_units_deleted {
             this.isUnitDeletionPending = false;
             ArrayClear(this.groundPoliceSquads);
         };
 
-        for unitID in evt.units {
+        for unitID in units_to_delete {
             GameInstance.GetDynamicEntitySystem().DeleteEntity(unitID);
         };
     };
