@@ -390,10 +390,6 @@ struct CyberpsychoEncountersDaemonEvent {
 }
 */
 
-struct CyberpsychoEncountersStartMaxtacAVRequest {//extends CyberpsychoEncountersDaemonEvent {
-    let sender: ref<DelayCallback>;
-}
-
 struct CyberpsychoEncountersCyberpsychoDeathEvent {
     let cyberpsycho: ref<NPCPuppet>;
 }
@@ -659,7 +655,6 @@ class StartCyberpsychoEncountersMaxtacAVResponseCallback extends DelayCallback {
     func Call() -> Void {
         let gi: GameInstance = GetGameInstance();
         let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-        let evt = new CyberpsychoEncountersStartMaxtacAVRequest(this);
         psychoSys.SpawnMaxTacAV();
     };
 }
