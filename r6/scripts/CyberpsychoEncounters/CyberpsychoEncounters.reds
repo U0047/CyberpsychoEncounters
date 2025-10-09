@@ -1082,8 +1082,8 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
         let BBSys = GameInstance.GetBlackboardSystem(gi);
-        let cyberpsycho = evt.cyberpsycho;
-        let cyberpsychoID = evt.cyberpsycho.GetEntityID();
+        let cyberpsycho = cyberpsycho;
+        let cyberpsychoID = cyberpsycho.GetEntityID();
         let psychoStimBroadcaster = cyberpsycho.GetStimBroadcasterComponent();
         let weaponBB = GetAllBlackboardDefs().Weapon;
         let psychoWeaponBB = BBSys.GetLocalInstanced(cyberpsychoID, weaponBB);
@@ -1109,7 +1109,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         /* This is here so crowd traffic vehicles will enter panic driving.
            For some strange reason they don't enter panic driving for combat
            or terror stim. */
-        this.cyberpsychoMappinID = this.RegisterPsychoMappin(evt.cyberpsycho);
+        this.cyberpsychoMappinID = this.RegisterPsychoMappin(cyberpsycho);
         psychoStimBroadcaster.AddActiveStimuli(cyberpsycho,
                                                gamedataStimType.VehicleHit,
                                                -1.00,
