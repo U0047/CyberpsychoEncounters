@@ -390,10 +390,6 @@ struct CyberpsychoEncountersDaemonEvent {
 }
 */
 
-struct CyberpsychoEncountersPsychoCombatStartedEvent {
-    let cyberpsycho: ref<NPCPuppet>;
-}
-
 struct CyberpsychoEncountersStartMaxtacAVRequest {//extends CyberpsychoEncountersDaemonEvent {
     let sender: ref<DelayCallback>;
 }
@@ -1045,12 +1041,11 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         // We only want the to trigger the combat started state *after* shots
         // have been fired by the cyberpsycho.
         let gi: GameInstance = GetGameInstance();
-        if value == 9 {
+        if value == 9 { // 9 = "Shoot"
             let cyberpsycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID) as NPCPuppet;
             let psycho_weapon = GameObject.GetActiveWeapon(cyberpsycho);
             if psycho_weapon.GetMagazineAmmoCount() < psycho_weapon.GetMagazineCapacity() {
-                let evt = new CyberpsychoEncountersPsychoCombatStartedEvent(cyberpsycho);
-                this.OnCyberpsychoCombatStarted(evt);
+                this.OnCyberpsychoCombatStarted(cyberpsycho);
             } else {
                 let psychoWeaponBB = psycho_weapon.GetSharedData();
                 let ammo_count_bb_def = GetAllBlackboardDefs().Weapon.MagazineAmmoCount;
@@ -1061,11 +1056,10 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             };
         };
 
-        if value == 2 || value == 3 {
+        if value == 2 || value == 3 { // 2 = "Attack", 3 = "ChargedAttack"
             let cyberpsycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID) as NPCPuppet;
 
-            let evt = new CyberpsychoEncountersPsychoCombatStartedEvent(cyberpsycho);
-            this.OnCyberpsychoCombatStarted(evt);
+            this.OnCyberpsychoCombatStarted(cyberpsycho);
         };
     };
 
@@ -1076,12 +1070,11 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let psychoWeaponBB = GameObject.GetActiveWeapon(cyberpsycho).GetSharedData();
         let psycho_weapon_cap = psychoWeaponBB.GetUint(GetAllBlackboardDefs().Weapon.MagazineAmmoCapacity);
         if count < psycho_weapon_cap {
-            let evt = new CyberpsychoEncountersPsychoCombatStartedEvent(cyberpsycho);
-            this.OnCyberpsychoCombatStarted(evt);
+            this.OnCyberpsychoCombatStarted(cyberpsycho);
         };
     };
 
-    func OnCyberpsychoCombatStarted(evt: CyberpsychoEncountersPsychoCombatStartedEvent) -> Void {
+    func OnCyberpsychoCombatStarted(cyberpsycho: ref<NPCPuppet>) -> Void {
         // Blackboard listeners seems to sometimes fire multiple times very
         // quickly so we need to prevent multiple calls to callback.
         if Equals(this.isCyberpsychoCombatStarted, true) {
