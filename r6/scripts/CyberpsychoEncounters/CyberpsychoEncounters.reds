@@ -390,10 +390,6 @@ struct CyberpsychoEncountersDaemonEvent {
 }
 */
 
-struct CyberpsychoEncountersGroundNCPDLeaveRequestedEvent {//extends CyberpsychoEncountersDaemonEvent {
-    let sender: ref<DelayDaemon>;
-}
-
 class CyberpsychoEncountersEventStarterDaemon extends DelayDaemon {
 
     func Call() -> Void {
