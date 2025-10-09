@@ -402,11 +402,6 @@ struct CyberpsychoEncountersCyberpsychoDeathEvent {
     let cyberpsycho: ref<NPCPuppet>;
 }
 
-struct CyberpsychoEncountersPlayerSecondsAwayEvent {//extends CyberpsychoEncountersDaemonEvent {
-    let sender: ref<DelayDaemon>;
-    let distance: Float;
-}
-
 struct CyberpsychoEncountersUnitsDeletionRequestedEvent {//extends CyberpsychoEncountersDaemonEvent {
     let sender: ref<DelayDaemon>;
     let units: array<EntityID>;
@@ -521,9 +516,7 @@ class CyberpsychoEncountersPlayerSecondsAwayDaemon extends DelayDaemon {
         let player_pos = GetPlayer(this.gi).GetWorldPosition();
         let distance = Vector4.DistanceSquared(player_pos, this.psycho_detatched_pos);
         if distance > 5625.00 { // > 75m
-            let evt = new CyberpsychoEncountersPlayerSecondsAwayEvent(this, distance);
-            evt.sender = this;
-            psychoSys.OnPlayerSecondAway(evt);
+            psychoSys.OnPlayerSecondAway(distance);
         };
         this.Repeat();
     };
@@ -1796,10 +1789,10 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         return true;
     };
 
-    func OnPlayerSecondAway(evt: CyberpsychoEncountersPlayerSecondsAwayEvent) -> Void {
+    func OnPlayerSecondAway(distance: Float) -> Void {
         this.playerSecondsAway += Cast<Uint16>(1);
-        if evt.distance > 22500.00 || this.playerSecondsAway > Cast<Uint16>(45) { // > 150m
-            evt.sender.Stop();
+        if distance > 22500.00 || this.playerSecondsAway > Cast<Uint16>(45) { // > 150m
+            this.playerSecondsAwayDaemon.Stop();
             this.CleanupCyberpsychoEvent();
         };
     };
