@@ -458,19 +458,19 @@ public class CyberpsychoDeathListener extends ScriptStatPoolsListener {
         };
     };
 
-  protected cb func OnStatPoolCustomLimitReached(value: Float) -> Bool {
-    let gi: GameInstance = GetGameInstance();
-    let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-    psychoSys.OnCyberpsychoIsDead(this.cyberpsycho);
-  };
-
-  protected cb func OnStatPoolMinValueReached(value: Float) -> Bool {
-    let gi: GameInstance = GetGameInstance();
-    let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-    if !psychoSys.isCyberpsychoDefeated() {
+    protected cb func OnStatPoolCustomLimitReached(value: Float) -> Bool {
+        let gi: GameInstance = GetGameInstance();
+        let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
         psychoSys.OnCyberpsychoIsDead(this.cyberpsycho);
     };
-  };
+
+    protected cb func OnStatPoolMinValueReached(value: Float) -> Bool {
+        let gi: GameInstance = GetGameInstance();
+        let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
+        if !psychoSys.isCyberpsychoDefeated() {
+            psychoSys.OnCyberpsychoIsDead(this.cyberpsycho);
+        };
+    };
 }
 
 class CyberpsychoEncountersPlayerSecondsAwayDaemon extends DelayDaemon {
