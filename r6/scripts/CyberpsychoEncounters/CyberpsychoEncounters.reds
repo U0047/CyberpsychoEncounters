@@ -672,7 +672,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     let playerSecondsAwayDaemon: ref<CyberpsychoEncountersPlayerSecondsAwayDaemon>;
 
     private func OnAttach() -> Void {
-        //ModSettings.RegisterListenerToClass(this);
         ModSettings.RegisterListenerToModifications(this);
     };
 
