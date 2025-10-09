@@ -384,12 +384,6 @@ struct CyberpsychoEncountersDistrictPoliceDelays {
     let maxtacDelay: Int16;
 }
 
-/*
-struct CyberpsychoEncountersDaemonEvent {
-    let sender: ref<CyberpsychoEncountersDaemonEvent>;
-}
-*/
-
 class CyberpsychoEncountersEventStarterDaemon extends DelayDaemon {
 
     func Call() -> Void {
