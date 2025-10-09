@@ -509,6 +509,7 @@ public class CyberpsychoDeathListener extends ScriptStatPoolsListener {
 
 class CyberpsychoEncountersPlayerSecondsAwayDaemon extends DelayDaemon {
     let psycho_detatched_pos: Vector4;
+    let player_seconds_away: Uint16;
 
     func Call() -> Void {
         let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(this.gi);
@@ -516,7 +517,8 @@ class CyberpsychoEncountersPlayerSecondsAwayDaemon extends DelayDaemon {
         let player_pos = GetPlayer(this.gi).GetWorldPosition();
         let distance = Vector4.DistanceSquared(player_pos, this.psycho_detatched_pos);
         if distance > 5625.00 { // > 75m
-            psychoSys.OnPlayerSecondAway(distance);
+            this.player_seconds_away += Cast<Uint16>(1);
+            psychoSys.OnPlayerSecondAway(distance, this.player_seconds_away);
         };
         this.Repeat();
     };
@@ -674,8 +676,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     let districtManager: ref<DistrictManager>;
 
     let isCyberpsychoEventInProgress: Bool = false;
-
-    let playerSecondsAway: Uint16;
 
     let playerCivsKilled: Uint8;
 
@@ -1003,7 +1003,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         if IsDefined(this.playerSecondsAwayDaemon) {
             this.playerSecondsAwayDaemon.Stop();
         };
-        this.playerSecondsAway = Cast<Uint16>(0u);
     };
 
     func StartPsychoCombatWithNearbyPreventionUnits(cyberpsycho: ref<NPCPuppet>) -> Void {
@@ -1789,9 +1788,8 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         return true;
     };
 
-    func OnPlayerSecondAway(distance: Float) -> Void {
-        this.playerSecondsAway += Cast<Uint16>(1);
-        if distance > 22500.00 || this.playerSecondsAway > Cast<Uint16>(45) { // > 150m
+    func OnPlayerSecondAway(distance: Float, second: Uint16) -> Void {
+        if distance > 22500.00 || second > Cast<Uint16>(45) { // > 150m
             this.playerSecondsAwayDaemon.Stop();
             this.CleanupCyberpsychoEvent();
         };
