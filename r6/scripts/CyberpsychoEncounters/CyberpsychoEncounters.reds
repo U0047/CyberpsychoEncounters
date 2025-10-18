@@ -1119,19 +1119,19 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.playerSecondsAwayDaemon.Start(gi, 1.00, true);
     };
 
-    func CanEntityBeSetupForPsychoCombat(e: wref<Entity>,
+    func CanEntityBeSetupForPsychoCombat(e: wref<ScriptedPuppet>,
                                          cyberpsycho: ref<ScriptedPuppet>) -> Bool {
         if !IsDefined(e) {
             return false;
         };
 
-        return !(e as ScriptedPuppet).GetSensesComponent().IsEnabled()
+        return !e.GetSensesComponent().IsEnabled()
         && e.IsAttached()
-        && !(e as ScriptedPuppet).IsDead()
-        && !(e as GameObject).IsPlayer()
-        && !(e as GameObject).IsPrevention()
-        && !(e as ScriptedPuppet).IsCharacterChildren()
-        && ((e as ScriptedPuppet).IsCivilian() || (e as ScriptedPuppet).IsCrowd());
+        && !e.IsDead()
+        && !e.IsPlayer()
+        && !e.IsPrevention()
+        && !e.IsCharacterChildren()
+        && (e.IsCivilian() || e.IsCrowd());
     };
 
     func TrySettingUpCrowdEntityForPsychoCombat(e: wref<ScriptedPuppet>,
