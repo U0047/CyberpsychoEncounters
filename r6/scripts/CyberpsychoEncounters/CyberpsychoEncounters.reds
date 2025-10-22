@@ -1120,7 +1120,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.playerSecondsAwayDaemon.Start(gi, 1.00, true);
     };
 
-    func CanEntityBeSetupForPsychoCombat(e: wref<ScriptedPuppet>,
+    func CanPuppetBeSetupForPsychoCombat(e: wref<ScriptedPuppet>,
                                          cyberpsycho: ref<ScriptedPuppet>) -> Bool {
         if !IsDefined(e) {
             return false;
@@ -1151,7 +1151,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             return true;
         };
 
-        if !this.CanEntityBeSetupForPsychoCombat(e, cyberpsycho) {
+        if !this.CanPuppetBeSetupForPsychoCombat(e, cyberpsycho) {
             return false;
         };
 
