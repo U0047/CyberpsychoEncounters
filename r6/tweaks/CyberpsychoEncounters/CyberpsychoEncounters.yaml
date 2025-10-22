@@ -1,3 +1,19 @@
+Attitudes.CyberpsychoEncounters_Group_Cyberpsycho:
+  $type: gamedataAttitudeGroup_Record
+  isState: false
+  name: "cyberpsychoEncountersCyberpsycho"
+  attitudeToSelf: "Hostile"
+  defaultAttitude: "Hostile"
+  parent: t"Attitudes.HostileToEveryone"
+
+# This may look wrong but "Friendly" are typically quest
+# characters that we don't want killed
+Attitudes.CyberpsychoEncounters_Attitude_Cyberpsycho_Friendly:
+ $type: gamedataAttitude_Record
+ group1: t"Attitudes.CyberpsychoEncounters_Group_Cyberpsycho"
+ group2: t"Attitudes.Group_Friendly"
+ value: "Friendly"
+
 MinimapMappinUIProfile.CyberpsychoEncountersEvent:
   $base: MinimapMappinUIProfile.Default
   priority: 1
@@ -114,7 +130,7 @@ Character.CyberpsychoEncounters_Base_Psycho:
   entityTemplatePath: base\characters\entities\gang\gang__cyberpunk_mb.ent 
   quest: None
   actionMap: Gang.Map
-  baseAttitudeGroup: "HostileToEveryone"
+  baseAttitudeGroup: "cyberpsychoEncountersCyberpsycho"
   # Both of these lockeys say "Cyberpsycho"
   displayName: LocKey#33507
   fullDisplayName: LocKey#33508
