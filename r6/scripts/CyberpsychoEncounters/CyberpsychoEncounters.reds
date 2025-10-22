@@ -897,9 +897,9 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             let closest_as_puppet = closest_ent as ScriptedPuppet;
             if IsDefined(closest_as_puppet) {
                 closest_as_puppet.GetSensesComponent().IgnoreLODChange(true);
-                this.TrySettingUpCrowdEntityForPsychoCombat(closest_as_puppet,
-                                                            cyberpsycho,
-                                                            false);
+                this.TrySettingUpCrowdNPCForPsychoCombat(closest_as_puppet,
+                                                         cyberpsycho,
+                                                         false);
                 TargetTrackingExtension.InjectThreat(cyberpsycho,
                                                       closest_ent,
                                                       0.01,
@@ -1135,10 +1135,10 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         && (e.IsCivilian() || e.IsCrowd());
     };
 
-    func TrySettingUpCrowdEntityForPsychoCombat(e: wref<ScriptedPuppet>,
-                                                cyberpsycho: ref<ScriptedPuppet>,
-                                                shouldWakeUpPrevention: Bool,
-                                                opt GroundPoliceConvoy: array<array<EntityID>>) -> Bool {
+    func TrySettingUpCrowdNPCForPsychoCombat(e: wref<ScriptedPuppet>,
+                                             cyberpsycho: ref<ScriptedPuppet>,
+                                             shouldWakeUpPrevention: Bool,
+                                             opt GroundPoliceConvoy: array<array<EntityID>>) -> Bool {
 
         if !IsDefined(e) {
             return false;
@@ -1216,10 +1216,10 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             let e_as_car: wref<VehicleObject> = (e as VehicleObject);
             let e_as_puppet: wref<ScriptedPuppet> = (e as ScriptedPuppet);
             if IsDefined(e_as_puppet) {
-                this.TrySettingUpCrowdEntityForPsychoCombat(e_as_puppet,
-                                                            cyberpsycho,
-                                                            this.isCyberpsychoCombatStarted,
-                                                            this.groundPoliceSquads);
+                this.TrySettingUpCrowdNPCForPsychoCombat(e_as_puppet,
+                                                         cyberpsycho,
+                                                         this.isCyberpsychoCombatStarted,
+                                                         this.groundPoliceSquads);
             } else {
 
                 if IsDefined(e_as_car) {
@@ -1254,10 +1254,10 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
         VehicleComponent.GetAllPassengers(gi, vehID, false, passengers);
         for p in passengers {
-            this.TrySettingUpCrowdEntityForPsychoCombat((p as ScriptedPuppet),
-                                                        psycho,
-                                                        isCyberpsychoCombatStarted,
-                                                        groundPoliceSquads);
+            this.TrySettingUpCrowdNPCForPsychoCombat((p as ScriptedPuppet),
+                                                      psycho,
+                                                      isCyberpsychoCombatStarted,
+                                                      groundPoliceSquads);
             /* Force some nearby car passengers to exit vehicles
                to prevent large amounts of panic driving vehicles,
                which cause lots of car explosions and pile-ups and
