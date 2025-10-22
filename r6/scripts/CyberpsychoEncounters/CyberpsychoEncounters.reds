@@ -614,6 +614,7 @@ class CyberpsychoEncountersConvoyVehicleArrivalDaemon extends DelayDaemon  {
         if IsDefined(veh_obj)
         && Vector4.DistanceSquared(veh_pos, psycho_pos) < 5625.00 {
             psychoSys.OnGroundNCPDVehicleHasArrived(this.vehicleSquad);
+            this.Stop();
         };
         this.Repeat();
     };
