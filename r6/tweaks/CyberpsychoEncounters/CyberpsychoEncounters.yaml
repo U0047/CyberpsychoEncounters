@@ -9,10 +9,10 @@ Attitudes.CyberpsychoEncounters_Group_Cyberpsycho:
 # This may look wrong but "Friendly" are typically quest
 # characters that we don't want killed
 Attitudes.CyberpsychoEncounters_Attitude_Cyberpsycho_Friendly:
- $type: gamedataAttitude_Record
- group1: t"Attitudes.CyberpsychoEncounters_Group_Cyberpsycho"
- group2: t"Attitudes.Group_Friendly"
- value: "Friendly"
+  $type: gamedataAttitude_Record
+  group1: t"Attitudes.CyberpsychoEncounters_Group_Cyberpsycho"
+  group2: t"Attitudes.Group_Friendly"
+  value: "Friendly"
 
 MinimapMappinUIProfile.CyberpsychoEncountersEvent:
   $base: MinimapMappinUIProfile.Default
