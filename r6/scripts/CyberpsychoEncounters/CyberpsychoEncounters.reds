@@ -1352,6 +1352,8 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                                      groundPoliceSquadsEntitySpecs) {
                 return true;
             };
+
+            return false;
         };
 
         veh_data_package.VehSeatSet().VehSeats(vehicle_seats);
