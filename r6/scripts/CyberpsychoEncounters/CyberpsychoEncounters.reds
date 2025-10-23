@@ -880,6 +880,10 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let cyberpsycho_tt = cyberpsycho.GetTargetTrackerComponent();
         this.cyberpsychoIsDead = false;
         this.isCyberpsychoEventInProgress = true;
+        if this.settings.canCyberpsychoTargetFriendly {
+            cyberpsycho.GetAttitudeAgent().SetAttitudeGroup(n"HostileToEveryone");
+        };
+
         cyberpsycho_tt.SetThreatBaseMul(GetPlayer(gi), 5.00);
         NPCPuppet.ChangeHighLevelState(cyberpsycho,
                                        gamedataNPCHighLevelState.Alerted);
@@ -2467,4 +2471,10 @@ public class CyberpsychoEncountersSettings {
     @runtimeProperty("ModSettings.max", "1.50")
     @runtimeProperty("ModSettings.dependency", "enabled")
     let encounterMultiplier: Float = 1.00;
+
+    @runtimeProperty("ModSettings.mod", "Random Cyberpsychos")
+    @runtimeProperty("ModSettings.displayName", "Cyberpsycho Friendly Targeting")
+    @runtimeProperty("ModSettings.description", "Prevents cyberpsychos from attacking characters that are friendly to the player such as quest characters.")
+    @runtimeProperty("ModSettings.dependency", "enabled")
+    let canCyberpsychoTargetFriendly: Bool = false;
 }
