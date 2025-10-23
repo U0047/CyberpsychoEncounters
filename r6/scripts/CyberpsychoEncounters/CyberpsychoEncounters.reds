@@ -713,7 +713,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func OnFrequencyMultiplierChanged(new_val: Float) -> Void {
-        //this.encounterMultiplier = new_val;
         this.settings.encounterMultiplier = new_val;
     };
 
