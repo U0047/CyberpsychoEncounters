@@ -27,12 +27,12 @@ public final static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>
 @wrapMethod(VehicleComponent)
 protected cb func OnGridDestruction(evt: ref<VehicleGridDestructionEvent>) -> Bool {
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
-        if psychoSys.isCyberpsychoCombatStarted()
-        || psychoSys.lastEncounterSeconds < Cast<Uint32>(45) {
-            if this.GetVehicle().IsPrevention() && evt.rammedOtherVehicle {
-                return false;
-            };
+    if psychoSys.isCyberpsychoCombatStarted()
+    || psychoSys.lastEncounterSeconds < Cast<Uint32>(45) {
+        if this.GetVehicle().IsPrevention() && evt.rammedOtherVehicle {
+            return false;
         };
+    };
     return wrappedMethod(evt);
 };
 
