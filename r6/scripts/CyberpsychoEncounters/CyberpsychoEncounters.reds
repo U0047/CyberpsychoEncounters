@@ -1720,7 +1720,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let veh: ref<VehicleObject> = GameInstance.FindEntityByID(gi, vehID) as VehicleObject;
         let unit_as_puppet = unit as ScriptedPuppet;
         let unit_as_g_obj = unit as GameObject;
-        if !IsDefined(veh) || veh.IsDestroyed() {
+        if !IsDefined(veh) || veh.IsDestroyed() || veh.ComputeIsVehicleUpsideDown() || (veh as WheeledObject).GetFlatTireIndex() != -1 {
             FTLog("[CyberpsychoEncountersEventSystem][TryMountGroundNCPDUnitToVehicle]: Failed to mount vehicle. Reason: Vehicle not drivable.");
             return false;
         };
