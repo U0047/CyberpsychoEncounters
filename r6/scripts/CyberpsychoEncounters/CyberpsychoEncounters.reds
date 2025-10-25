@@ -1696,8 +1696,10 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             let slot_num: Int32 = 0;
             let ii: Int32 = 1;
             while ii < ArraySize(squad) {
-                let npc = GameInstance.FindEntityByID(GetGameInstance(), squad[ii]);
                 let slot = seat_priority_list[slot_num].SeatName();
+                let npc = GameInstance.FindEntityByID(GetGameInstance(), squad[ii]);
+                preventionSys.RegisterPreventionUnit((npc as GameObject), DynamicVehicleType.Car, false);
+                (npc as ScriptedPuppet).TryRegisterToPrevention();
                 if this.TryMountGroundNCPDUnitToVehicle(npc, vehID, slot) {
                     slot_num += 1;
                 } else {
