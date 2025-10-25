@@ -1693,14 +1693,20 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         while i < ArraySize(groundPoliceSquads) {
             let squad = groundPoliceSquads[i];
             let vehID = squad[0];
+            let veh: ref<VehicleObject> = GameInstance.FindEntityByID(gi, vehID) as VehicleObject;
             let slot_num: Int32 = 0;
             let ii: Int32 = 1;
+            let command: ref<AIVehicleJoinTrafficCommand> = new AIVehicleJoinTrafficCommand();
+            command.needDriver = true;
+            command.useKinematic = true;
+            veh.GetAIComponent().SendCommand(command);
             while ii < ArraySize(squad) {
                 let slot = seat_priority_list[slot_num].SeatName();
                 let npc = GameInstance.FindEntityByID(GetGameInstance(), squad[ii]);
                 preventionSys.RegisterPreventionUnit((npc as GameObject), DynamicVehicleType.Car, false);
                 (npc as ScriptedPuppet).TryRegisterToPrevention();
-                if this.TryMountGroundNCPDUnitToVehicle(npc, vehID, slot) {
+                slot = veh.GetAIComponent().TryReserveSeatOrFirstAvailable(squad[ii], n"first_available");
+                if IsNameValid(slot) && this.TryMountGroundNCPDUnitToVehicle(npc, vehID, slot) {
                     slot_num += 1;
                 } else {
                     let player_pos_v3 = Cast<Vector3>(GetPlayer(gi).GetWorldPosition());
