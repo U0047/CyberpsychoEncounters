@@ -168,24 +168,6 @@ protected cb func OnEnemyThreatDetected(th: ref<EnemyThreatDetected>) -> Bool {
     return wrappedMethod(th);
 }
 
-// When Prevention units are spawned in they something causes all commands to be
-// cancelled and this join traffic function is started. This is here to prevent
-// that when spawning in the police convoy.
-@wrapMethod(JoinTrafficInPoliceVehicle)
-protected func Activate(context: ScriptExecutionContext) -> Void {
-    let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
-    if psychoSys.isCyberpsychoCombatStarted() {
-        let vehID = this.m_vehicle.GetEntityID();
-        for squad in psychoSys.groundPoliceSquads {
-            if squad[0] == vehID {
-                return;
-            };
-        };
-        return;
-    };
-    wrappedMethod(context);
-};
-
 // This is here so that the custom cyberpsycho map pin can be registered.
 @wrapMethod(MinimapContainerController)
 public func CreateMappinUIProfile(mappin: wref<IMappin>,
