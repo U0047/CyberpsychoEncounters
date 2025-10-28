@@ -1808,6 +1808,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                 return [t"CyberpsychoEncounters.Character_Pool_Mox_Psychos",
                         t"CyberpsychoEncounters.Character_Pool_Tyger_Claw_Psychos"];
             case "CharterHill":
+            case "CharterHill_AuCabanon":
                 return [t"CyberpsychoEncounters.Character_Pool_Tyger_Claw_Psychos"];
             case "VistaDelRey":
             case "Heywood":
@@ -2015,6 +2016,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         switch district_name {
             case "ArasakaWaterfront":
             case "CharterHill":
+            case "CharterHill_AuCabanon":
             case "CityCenter":
             case "Columbarium":
             case "CorpoPlaza":
