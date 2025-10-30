@@ -857,7 +857,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     func OnCyberpsychoFirstAttached(cyberpsycho: ref<NPCPuppet>) -> Void {
         let gi: GameInstance = GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
-        let cyberpsycho = cyberpsycho;
         let cyberpsychoID = cyberpsycho.GetEntityID();
         let cyberpsycho_tt = cyberpsycho.GetTargetTrackerComponent();
         this.cyberpsychoIsDead = false;
