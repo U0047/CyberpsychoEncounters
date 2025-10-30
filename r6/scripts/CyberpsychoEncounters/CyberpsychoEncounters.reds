@@ -1351,12 +1351,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                       TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatBackRight"));
         };
 
-        // We remove the driver seat record so a driver does not spawn in order
-        // to workaround an issue where spawining a driver cancels the drive to
-        // point command.
-        ArrayRemove(vehicle_seats,
-                    TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatFrontLeft"));
-
         let i: Int32 = 0;
         while i < ArraySize(groundPoliceSquadsEntitySpecs) {
             let cur_vehicle_entity_IDs: array<EntityID>;
@@ -1572,34 +1566,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let vehID = vehicleSquad[0];
         let veh = GameInstance.FindEntityByID(gi, vehID);
         let passengers: array<wref<GameObject>>;
-        /* If the driver is spawned earlier than here, such as when the actual
-           drive to point autonomous command is issued, the ground vehicle will
-           cancel the drive to point command and join traffic, and never reach 
-           the cyberpsycho. We spawn the driver later (here) as a workaround so
-           that the command doesn't get canceled until the units are already
-           close. */
-
-        let passenger = new DynamicEntitySpec();
-        passenger.recordID = t"Character.ncpd_hwp_gunner2_defender_mb_rare";
-        passenger.position = veh.GetWorldPosition();
-        passenger.persistState = true;
-        passenger.persistSpawn = true;
-        passenger.alwaysSpawned = false;
-        passenger.tags = [n"CyberpsychoEncounters_npc_police"];
-        let npcID = GameInstance.GetDynamicEntitySystem().CreateEntity(passenger);
-        let i = 0;
-        while i < ArraySize(this.groundPoliceSquads) {
-            let squadVehID = this.groundPoliceSquads[i][0];
-            if squadVehID == vehID {
-                ArrayPush(this.groundPoliceSquads[i], npcID);
-                break;
-            };
-            i += 1;
-        };
-        let npc = GameInstance.FindEntityByID(gi, npcID);
-        let seat_record = TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatFrontLeft");
-        MountEntityToVehicle(npcID, vehID, seat_record, true, false, true);
-        (npc as ScriptedPuppet).TryRegisterToPrevention();
         let cyberpsycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID) as NPCPuppet;
         let i = 1;
         while i < ArraySize(vehicleSquad) {
