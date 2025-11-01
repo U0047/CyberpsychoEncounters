@@ -22,20 +22,6 @@ public final static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>
     return wrappedMethod(owner, target);
 };
 
-// This is here to prevent police from going completely nuts on all civs when
-// hitting cars while leaving.
-@wrapMethod(VehicleComponent)
-protected cb func OnGridDestruction(evt: ref<VehicleGridDestructionEvent>) -> Bool {
-    let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
-    if psychoSys.isCyberpsychoCombatStarted()
-    || psychoSys.lastEncounterSeconds < Cast<Uint32>(45) {
-        if this.GetVehicle().IsPrevention() && evt.rammedOtherVehicle {
-            return false;
-        };
-    };
-    return wrappedMethod(evt);
-};
-
 // This is here to redirect maxtac fear event to psycho instead of the player.
 @wrapMethod(PsychoSquadAvHelperClass)
 private final func OnMaxTacFearEventDelayed(evt: ref<MaxTacFearEvent>) -> Void {
