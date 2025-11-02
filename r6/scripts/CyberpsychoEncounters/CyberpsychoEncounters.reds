@@ -1327,16 +1327,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         };
 
         veh_data_package.VehSeatSet().VehSeats(vehicle_seats);
-
-        // For some reason the hellhound data package only contains the two
-        // front seats even though it has two back seats.
-        if StrContains(NameToString(veh_record.DisplayName()), "Hellhound") {
-            ArrayPush(vehicle_seats,
-                      TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatBackLeft"));
-            ArrayPush(vehicle_seats,
-                      TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatBackRight"));
-        };
-
         let i: Int32 = 0;
         while i < ArraySize(groundPoliceSquadsEntitySpecs) {
             let cur_vehicle_entity_IDs: array<EntityID>;
@@ -1825,7 +1815,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let n: Uint8 = Cast<Uint8>(RandRange(0, 10));
         let i: Int32 = 0;
         if n > Cast<Uint8>(8) {
-            veh_record = t"Vehicle.v_standard3_militech_hellhound_police";
+            veh_record = t"Vehicle.CyberpsychoEncounters_v_standard3_militech_hellhound_police";
         } else {
             if n > Cast<Uint8>(6) {
               veh_record = t"Vehicle.v_standard25_thorton_merrimac_police";

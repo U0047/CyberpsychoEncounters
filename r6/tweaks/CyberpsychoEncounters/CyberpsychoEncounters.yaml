@@ -18,6 +18,15 @@ MinimapMappinUIProfile.CyberpsychoEncountersEvent:
   $base: MinimapMappinUIProfile.Default
   priority: 1
 
+Vehicle.CyberpsychoEncounters_v_standard3_militech_hellhound_police:
+  $base: Vehicle.v_standard3_militech_hellhound_police
+  vehDataPackage: Vehicle.CyberpsychoEncounters_v_standard3_militech_hellhound_police_data_package
+  maxVehiclePassengersCount: 4
+
+Vehicle.CyberpsychoEncounters_v_standard3_militech_hellhound_police_data_package:
+  $base: Vehicle.v_standard3_militech_hellhound_police_inline0
+  vehSeatSet: t"Vehicle.Vehicle4SeatSetDefault"
+
 Mappins.CyberpsychoEncounters_Psycho_Mappin_Definition:
   $type: gamedataMappinDefinition_Record
   possibleVariants: [Mappins.PointOfInterest_HuntForPsychoVariant]
