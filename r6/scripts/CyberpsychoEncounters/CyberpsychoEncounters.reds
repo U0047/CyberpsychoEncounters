@@ -833,7 +833,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     let playerCopHitCount: Uint8;
 
-    persistent let groundPoliceSquads: array<array<EntityID>>;
+    persistent let groundPoliceSquads: array<CyberpsychoEncountersNCPDGroundPoliceSquad>;
 
     persistent let isUnitDeletionPending: Bool;
 
@@ -865,17 +865,21 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         ModSettings.RegisterListenerToModifications(this);
     };
 
+    func RequestDeleteUnits() -> Void {
+        if ArraySize(this.groundPoliceSquads) > 0 {
+            let deletionDaemon = new CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon();
+            deletionDaemon.squads = this.groundPoliceSquads;
+            deletionDaemon.Start(GetGameInstance(), 1.00, false);
+        };
+    };
+
 
     private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
         let gi: GameInstance = GetGameInstance();
         this.settings = new CyberpsychoEncountersSettings();
         this.districtManager = GetDistrictManager();
         FTLog(s"[CyberpsychoEncountersEventSystem][OnRestored]: Units pending deletion? \(this.isUnitDeletionPending)");
-        if this.isUnitDeletionPending {
-            let deletionDaemon = new CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon();
-            deletionDaemon.units = this.groundPoliceSquads;
-            deletionDaemon.Start(gi, 1.00, false);
-        };
+        this.RequestDeleteUnits();
         if EntityID.IsDefined(this.cyberpsychoID) {
             let psycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID);
             FTLog("[CyberpsychoEncountersEventSystem][OnRestored]: Leftover psycho defined, creating deletion daemon.");
@@ -1328,8 +1332,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     func TrySettingUpCrowdNPCForPsychoCombat(e: wref<ScriptedPuppet>,
                                              cyberpsycho: ref<ScriptedPuppet>,
-                                             shouldWakeUpPrevention: Bool,
-                                             opt GroundPoliceConvoy: array<array<EntityID>>) -> Bool {
+                                             shouldWakeUpPrevention: Bool) -> Bool {
 
         if !IsDefined(e) {
             return false;
@@ -1337,8 +1340,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
         if shouldWakeUpPrevention
         && this.TrySettingUpPreventionPuppetForCyberpsychoCombat(e,
-                                                                 cyberpsycho,
-                                                                 GroundPoliceConvoy) {
+                                                                 cyberpsycho) {
             return true;
         };
 
@@ -1357,8 +1359,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func TrySettingUpPreventionPuppetForCyberpsychoCombat(e: wref<ScriptedPuppet>,
-                                                          cyberpsycho: ref<ScriptedPuppet>,
-                                                          opt groundPoliceConvoy: array<array<EntityID>>) -> Bool {
+                                                          cyberpsycho: ref<ScriptedPuppet>) -> Bool {
             if !IsDefined(e) || !(e as ScriptedPuppet).IsPrevention() {
                 return false;
             };
@@ -1366,7 +1367,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             let entID = e.GetEntityID();
             let eSenseComp = e.GetSensesComponent();
             let psychoID = cyberpsycho.GetEntityID();
-            if this.isEntityPartOfGroundPoliceSquad(entID, groundPoliceConvoy) {
+            if this.isEntityPartOfGroundPoliceSquad(entID) {
                 return false;
             };
 
@@ -1409,15 +1410,13 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             if IsDefined(e_as_puppet) {
                 this.TrySettingUpCrowdNPCForPsychoCombat(e_as_puppet,
                                                          cyberpsycho,
-                                                         this.isCyberpsychoCombatStarted,
-                                                         this.groundPoliceSquads);
+                                                         this.isCyberpsychoCombatStarted);
             } else {
 
                 if IsDefined(e_as_car) {
                     this.SetupCrowdVehiclePassengersForPsychoCombat(e_as_car,
                                                                     cyberpsycho,
-                                                                    this.isCyberpsychoCombatStarted,
-                                                                    this.groundPoliceSquads);
+                                                                    this.isCyberpsychoCombatStarted);
                 };
             };
         };
@@ -1425,8 +1424,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     func SetupCrowdVehiclePassengersForPsychoCombat(veh: wref<VehicleObject>,
                                                     psycho: ref<ScriptedPuppet>,
-                                                    isCyberpsychoCombatStarted: Bool,
-                                                    opt groundPoliceSquads: array<array<EntityID>>) -> Void {
+                                                    isCyberpsychoCombatStarted: Bool) -> Void {
         if !IsDefined(veh) || !veh.IsAttached() || !veh.IsDestroyed() {
             return;
         };
@@ -1447,8 +1445,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         for p in passengers {
             this.TrySettingUpCrowdNPCForPsychoCombat((p as ScriptedPuppet),
                                                       psycho,
-                                                      isCyberpsychoCombatStarted,
-                                                      groundPoliceSquads);
+                                                      isCyberpsychoCombatStarted);
             /* Force some nearby car passengers to exit vehicles
                to prevent large amounts of panic driving vehicles,
                which cause lots of car explosions and pile-ups and
@@ -1550,7 +1547,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         veh_data_package.VehSeatSet().VehSeats(vehicle_seats);
         let i: Int32 = 0;
         while i < ArraySize(groundPoliceSquadsEntitySpecs) {
-            let cur_vehicle_entity_IDs: array<EntityID>;
+            let squad: CyberpsychoEncountersNCPDGroundPoliceSquad;
             let cur_vehicle_spec = groundPoliceSquadsEntitySpecs[i][0];
             let veh_fwd = cur_vehicle_spec.orientation.GetForward();
             let distance = new Vector4(-veh_fwd.X + (7.00 * Cast<Float>(i)),
@@ -1560,7 +1557,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             let veh_pos = spawn_points[i] + distance;
             cur_vehicle_spec.position = veh_pos;
             let vehID = dynamicEntSys.CreateEntity(cur_vehicle_spec);
-            ArrayPush(cur_vehicle_entity_IDs, vehID);
+            ArrayPush(squad.units, vehID);
             let ii: Int32 = 0;
             while ii < ArraySize(vehicle_seats) {
                 let s = vehicle_seats[ii];
@@ -1570,14 +1567,14 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                 let passenger = groundPoliceSquadsEntitySpecs[i][ii + 1];
                 passenger.position = veh_pos;
                 let npcID = dynamicEntSys.CreateEntity(passenger);
-                ArrayPush(cur_vehicle_entity_IDs, npcID);
+                ArrayPush(squad.units, npcID);
                 MountEntityToVehicle(npcID, vehID, s, true, false, true);
                 ii = ii + 1;
             };
             let attachmentDaemon = new CyberpsychoEncountersConvoyVehicleAttachmentDaemon();
-            attachmentDaemon.vehicleSquad = cur_vehicle_entity_IDs;
+            attachmentDaemon.vehicleSquad = squad.units;
             attachmentDaemon.Start(gi, 0.50, false);
-            ArrayPush(this.groundPoliceSquads, cur_vehicle_entity_IDs);
+            ArrayPush(this.groundPoliceSquads, squad);
             i = i + 1;
         };
         return true;
@@ -1590,7 +1587,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let psycho_pos = cyberpsycho.GetWorldPosition();
         let i = 0;
         while i < ArraySize(groundPoliceSquadsEntitySpecs) {
-            let squadIDs: array<EntityID>;
+            let squad: CyberpsychoEncountersNCPDGroundPoliceSquad;
             let squadSpecs = groundPoliceSquadsEntitySpecs[i];
             // these start at 1 since the first spec is a vehicle spec
             // but the fallback is for human NPCs only.
@@ -1651,10 +1648,10 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                 let npcID = dynamicEntSys.CreateEntity(npcSpec);
                 let npc = GameInstance.FindEntityByID(GetGameInstance(), npcID);
                 TargetTrackingExtension.InjectThreat((npc as ScriptedPuppet), cyberpsycho, 1.00, -1.00);
-                ArrayPush(squadIDs, npcID);
+                ArrayPush(squad.units, npcID);
                 ii += 1;
             };
-            ArrayPush(this.groundPoliceSquads, squadIDs);
+            ArrayPush(this.groundPoliceSquads, squad);
             i += 1;
         };
         return true;
@@ -1681,7 +1678,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                                                    NavGenAgentSize.Human,
                                                                    maxtac_points,
                                                                    fallback_maxtac_points);
-        let squadIDs: array<EntityID>;
+        let squad: CyberpsychoEncountersNCPDGroundPoliceSquad;
         let i = 0;
         while i < 4 {
             let maxtacSpec: ref<DynamicEntitySpec> = new DynamicEntitySpec();
@@ -1703,7 +1700,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                 };
             };
             let npcID = GameInstance.GetDynamicEntitySystem().CreateEntity(maxtacSpec);
-            ArrayPush(squadIDs, npcID);
+            ArrayPush(squad.units, npcID);
             let npc = GameInstance.FindEntityByID(GetGameInstance(), npcID);
             TargetTrackingExtension.InjectThreat((npc as ScriptedPuppet),
                                                  cyberpsycho,
@@ -1712,7 +1709,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             i += 1;
         };
 
-        ArrayPush(this.groundPoliceSquads, squadIDs);
+        ArrayPush(this.groundPoliceSquads, squad);
         return true;
     };
 
@@ -1813,7 +1810,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.cyberpsychoDeathListener = null;
         this.cyberpsychoIsDead = true;
         this.cyberpsychoTargetDaemon.Stop();
-        this.EndNCPDNpcResponse(this.groundPoliceSquads);
+        this.EndNCPDNpcResponse();
         let EnablePreventionCback = new CyberpsychoEncountersDelayPreventionSystemToggledCallback();
         EnablePreventionCback.toggle = true;
         delaySys.DelayCallback(EnablePreventionCback, 5.00, true);
@@ -1822,7 +1819,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         FastTravelSystem.RemoveFastTravelLock(n"CyberpsychoEncountersEventInProgress", gi);
     };
 
-    func EndNCPDNpcResponse(groundPoliceSquads: array<array<EntityID>>) -> Void {
+    func EndNCPDNpcResponse() -> Void {
         let gi: GameInstance = GetGameInstance();
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
@@ -1831,34 +1828,32 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             return;
         };
 
-        let seat_priority_list: array<ref<VehicleSeat_Record>> = [TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatFrontLeft"), TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatFrontRight"), TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatBackLeft"), TweakDBInterface.GetVehicleSeatRecord(t"Vehicle.SeatBackRight")];
-
         let i: Int32 = 0;
-        while i < ArraySize(groundPoliceSquads) {
-            let squad = groundPoliceSquads[i];
-            let vehID = squad[0];
+        while i < ArraySize(this.groundPoliceSquads) {
+            let squad = this.groundPoliceSquads[i];
+            let vehID = squad.units[0];
             let veh: ref<VehicleObject> = GameInstance.FindEntityByID(gi, vehID) as VehicleObject;
-            let slot_num: Int32 = 0;
-            let ii: Int32 = 1;
-            let command: ref<AIVehicleJoinTrafficCommand> = new AIVehicleJoinTrafficCommand();
-            command.needDriver = true;
-            command.useKinematic = true;
-            veh.GetAIComponent().SendCommand(command);
-            while ii < ArraySize(squad) {
-                let slot = seat_priority_list[slot_num].SeatName();
-                let npc = GameInstance.FindEntityByID(GetGameInstance(), squad[ii]);
-                preventionSys.RegisterPreventionUnit((npc as GameObject), DynamicVehicleType.Car, false);
-                (npc as ScriptedPuppet).TryRegisterToPrevention();
-                slot = veh.GetAIComponent().TryReserveSeatOrFirstAvailable(squad[ii], n"first_available");
-                if IsNameValid(slot) && this.TryMountGroundNCPDUnitToVehicle(npc, vehID, slot) {
-                    slot_num += 1;
-                } else {
-                    let player_pos_v3 = Cast<Vector3>(GetPlayer(gi).GetWorldPosition());
-                    reactionSystem.TryAndJoinTraffic((npc as GameObject),
-                                                     player_pos_v3,
-                                                     false);
+            if IsDefined(veh) {
+
+                let ii: Int32 = 1;
+                let passengerDaemon = new CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher();
+                passengerDaemon.vehicle = (veh as WheeledObject);
+                squad.passengerDaemon = passengerDaemon;
+                while ii < ArraySize(squad.units) {
+                    let npc = GameInstance.FindEntityByID(GetGameInstance(), squad.units[ii]) as ScriptedPuppet;
+                    preventionSys.RegisterPreventionUnit(npc, DynamicVehicleType.Car, false);
+                    (npc as ScriptedPuppet).TryRegisterToPrevention();
+                    let npcMonitor = new CyberpsychoEncountersNCPDUnitMountCommandDispatcher();
+                    npcMonitor.parent = passengerDaemon;
+                    npcMonitor.unit = npc;
+                    npcMonitor.vehicle = veh as WheeledObject;
+                    npcMonitor.SetupListener();
+                    ArrayPush(passengerDaemon.unitMonitors, npcMonitor);
+                    NPCPuppet.ChangeHighLevelState(npc,
+                                                   gamedataNPCHighLevelState.Relaxed);
+                    ii += 1;
                 };
-                ii += 1;
+                passengerDaemon.Start(gi, 1.00, true);
             };
             i += 1;
         };
@@ -1920,12 +1915,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.cyberpsychoAttachmentDaemon.Stop();
         GameInstance.GetDynamicEntitySystem().DeleteEntity(this.cyberpsychoID);
         this.cyberpsychoID = new EntityID();
-        if ArraySize(this.groundPoliceSquads) > 0 {
-            let deletionDaemon = new CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon();
-            deletionDaemon.units = this.groundPoliceSquads;
-            deletionDaemon.Start(gi, 1.00, false);
-            this.isUnitDeletionPending = true;
-        };
+        this.RequestDeleteUnits();
         /* Sometimes players can miss the cyberpsycho event by leaving the area
            before the psycho attacks. This bypasses the cooldown if that happens
            so it takes less time for players to experience an actual attack with
@@ -1946,10 +1936,15 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func OnGroundNCPDUnitsDeletionRequested(units_to_delete: array<EntityID>,
+                                            daemons_to_stop: array<ref<CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher>>,
                                             all_units_deleted: Bool) -> Void {
         if all_units_deleted {
             this.isUnitDeletionPending = false;
             ArrayClear(this.groundPoliceSquads);
+        };
+
+        for daemon in daemons_to_stop {
+            daemon.Stop();
         };
 
         for unitID in units_to_delete {
@@ -2342,10 +2337,9 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         return roll;
     };
 
-    func isEntityPartOfGroundPoliceSquad(entID: EntityID,
-                                         groundPoliceSquads: array<array<EntityID>>) -> Bool {
-        for squad in groundPoliceSquads {
-            for id in squad {
+    func isEntityPartOfGroundPoliceSquad(entID: EntityID) -> Bool {
+        for squad in this.groundPoliceSquads {
+            for id in squad.units {
                 if entID == id {
                     return true;
                 };
