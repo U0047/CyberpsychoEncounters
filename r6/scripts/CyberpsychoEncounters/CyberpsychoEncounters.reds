@@ -1917,10 +1917,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         mountData.mountParentEntityId = vehID;
         mountData.isInstant = false;
         mountData.ignoreHLS = true;
-        if Equals((unit_as_puppet).GetHighLevelStateFromBlackboard(),
-                  gamedataNPCHighLevelState.Combat) {
-            mountData.entrySlotName = n"combat";
-        };
         let mountCommand = new AIMountCommand();
         mountCommand.mountData = mountData;
         let evt = new AICommandEvent();
