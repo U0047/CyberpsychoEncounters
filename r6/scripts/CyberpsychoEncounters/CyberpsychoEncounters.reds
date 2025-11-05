@@ -1581,7 +1581,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func TryCreateGroundNCPDFallbackUnits(cyberpsycho: ref<NPCPuppet>,
-                                       groundPoliceSquadsEntitySpecs: array<array<ref<DynamicEntitySpec>>>) -> Bool {
+                                          groundPoliceSquadsEntitySpecs: array<array<ref<DynamicEntitySpec>>>) -> Bool {
         let NavSys = GameInstance.GetNavigationSystem(GetGameInstance());
         let dynamicEntSys = GameInstance.GetDynamicEntitySystem();
         let psycho_pos = cyberpsycho.GetWorldPosition();
