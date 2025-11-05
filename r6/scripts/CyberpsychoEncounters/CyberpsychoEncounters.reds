@@ -597,6 +597,11 @@ class StartCyberpsychoEncountersMaxtacAVResponseCallback extends DelayCallback {
     };
 }
 
+public struct CyberpsychoEncountersNCPDGroundPoliceSquad {
+    persistent let units: array<EntityID>;
+    let passengerDaemon: ref<CyberpsychoEncountersNCPDVehiclePassengersMountedDaemon>;
+}
+
 public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     let settings: ref<CyberpsychoEncountersSettings>;
 
