@@ -9,6 +9,38 @@ import Utils2077.SpatialUtils.{GetDistrictManager,
                                IsPlayerNearQuestMappin,
                                isPointInAnyLoadedSecurityAreaRadius}
 
+// This wrap stops a panic drive command from being sent to convoy vehicles
+// when the driver mounts after cyberpsychos are defeated. Without this the
+// panic command may be sent and started before psychoSys.EndNCPDNpcResponse
+// can issue the join traffic command.
+@wrapMethod(JoinTrafficInPoliceVehicle)
+protected func Update(context: ScriptExecutionContext) -> AIbehaviorUpdateOutcome {
+    let owner: ref<gamePuppet> = ScriptExecutionContext.GetOwner(context);
+    let gameInstance: GameInstance = owner.GetGame();
+    let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
+    if !psychoSys.isCyberpsychoDefeated() {
+      return wrappedMethod(context);
+    };
+
+    if IsDefined(this.m_vehicle) || VehicleComponent.GetVehicle(ScriptExecutionContext.GetOwner(context).GetGame(), ScriptExecutionContext.GetOwner(context), this.m_vehicle) {
+      if this.m_vehicle.HasTrafficSlot() {
+        return AIbehaviorUpdateOutcome.IN_PROGRESS;
+      };
+      if VehicleComponent.IsDriver(gameInstance, owner) {
+        if VehicleComponent.CanBeDriven(gameInstance, owner.GetEntityID()) {
+              GameInstance.GetPreventionSpawnSystem(ScriptExecutionContext.GetOwner(context).GetGame()).RequestDespawnVehicleAndPassengers(this.m_vehicle);
+          };
+          return AIbehaviorUpdateOutcome.IN_PROGRESS;
+      } else {
+        if !VehicleComponent.HasActiveDriverMounted(ScriptExecutionContext.GetOwner(context).GetGame(), this.m_vehicle.GetEntityID()) && !this.m_vehicle.GetAIComponent().IsSeatReserved(n"seat_front_left") {
+          return AIbehaviorUpdateOutcome.FAILURE;
+        };
+      };
+      return AIbehaviorUpdateOutcome.IN_PROGRESS;
+    };
+    return AIbehaviorUpdateOutcome.FAILURE;
+}
+
 // This is here to prevent police from going ballistic on civs.
 @wrapMethod(AIActionHelper)
 public final static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>,
