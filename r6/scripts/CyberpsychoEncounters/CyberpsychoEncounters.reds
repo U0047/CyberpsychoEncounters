@@ -597,6 +597,141 @@ class StartCyberpsychoEncountersMaxtacAVResponseCallback extends DelayCallback {
     };
 }
 
+public class CyberpsychoEncountersNCPDUnitMounter {
+    let parent: wref<CyberpsychoEncountersNCPDVehiclePassengersMountedDaemon>;
+    let unit: ref<ScriptedPuppet>;
+    let vehicle: wref<WheeledObject>;
+    let cmd: ref<AIMountCommand>;
+    let unitHLSCallback: ref<CallbackHandle>;
+    let unitReactionBehaviorOutputCallback: ref<CallbackHandle>;
+
+    func SetupListener() -> Bool {
+        let bb_defs = GetAllBlackboardDefs();
+        let unitPuppetStateBB = this.unit.GetPuppetStateBlackboard();
+        this.unitHLSCallback = unitPuppetStateBB.RegisterListenerInt(bb_defs.PuppetState.HighLevel,
+                                                                     this,
+                                                                     n"OnGroundNCPDUnitHLSChanged",
+                                                                     true);
+        this.unitReactionBehaviorOutputCallback = unitPuppetStateBB.RegisterListenerInt(bb_defs.PuppetState.ReactionBehavior,
+                                                                     this,
+                                                                     n"OnGroundNCPDOutputChanged",
+                                                                     true);
+        return true;
+    };
+
+    cb func OnGroundNCPDOutputChanged(output: Int32) -> Void {
+
+        let unitID = this.unit.GetEntityID();
+        if output != 8 && output != 9 && output != 12 && output != 22 && output != 23 {
+            return;
+        };
+
+        let cmd_state: AICommandState;
+        if this.IsMountCommandActive(cmd_state) {
+            return;
+        };
+
+        if VehicleComponent.IsMountedToProvidedVehicle(GetGameInstance(), unitID, this.vehicle) {
+            if Equals(cmd_state, AICommandState.Success) {
+                this.cmd = null;
+            };
+            return;
+        };
+
+        let unit_hls = this.unit.GetHighLevelStateFromBlackboard();
+        if Equals(unit_hls, gamedataNPCHighLevelState.Relaxed) {
+            this.TrySendMountCommand();
+        };
+
+    };
+
+    func IsMountCommandActive(out cmd_state: AICommandState) -> Bool {
+        if !IsDefined(this.cmd) {
+            return false;
+        };
+
+        cmd_state = this.unit.GetAIControllerComponent().GetCommandState(this.cmd);
+        if Equals(cmd_state, AICommandState.Enqueued)
+        || Equals(cmd_state, AICommandState.Executing) {
+            return true;
+        };
+
+        return false;
+    };
+
+    cb func OnGroundNCPDUnitHLSChanged(hls: Int32) -> Void {
+        let gi: GameInstance = GetGameInstance();
+        let unitID = this.unit.GetEntityID();
+        if VehicleComponent.IsMountedToProvidedVehicle(gi, unitID, this.vehicle) {
+            return;
+        };
+
+        let cmd_state: AICommandState;
+        if this.IsMountCommandActive(cmd_state) {
+            return;
+        };
+
+        if Equals(cmd_state, AICommandState.Success) {
+            this.cmd = null;
+        };
+
+        let unit_hls = this.unit.GetHighLevelStateFromBlackboard();
+        if Equals(unit_hls, gamedataNPCHighLevelState.Relaxed) {
+            this.TrySendMountCommand();
+        };
+    };
+
+    func TrySendMountCommand() -> Bool {
+        let vehAIComp = this.vehicle.GetAIComponent();
+        let unitID = this.unit.GetEntityID();
+        let slot = vehAIComp.TryReserveSeatOrFirstAvailable(unitID, n"first_available");
+        if IsNameValid(slot) {
+            let mountData = new MountEventData();
+            mountData.slotName = slot;
+            mountData.mountParentEntityId = this.vehicle.GetEntityID();
+            mountData.isInstant = false;
+            mountData.ignoreHLS = true;
+            let mountCommand = new AIMountCommand();
+            mountCommand.mountData = mountData;
+            let evt = new AICommandEvent();
+            evt.command = mountCommand;
+            this.unit.QueueEvent(evt);
+            this.cmd = mountCommand;
+            return true;
+        };
+
+        return false;
+    };
+
+    func Cancel() -> Void {
+        let puppetStateBB = GetAllBlackboardDefs().PuppetState;
+        let unitPuppetStateBB = this.unit.GetPuppetStateBlackboard();
+        unitPuppetStateBB.UnregisterListenerInt(puppetStateBB.HighLevel, this.unitHLSCallback);
+        unitPuppetStateBB.UnregisterListenerInt(puppetStateBB.HighLevel,
+                                                this.unitReactionBehaviorOutputCallback);
+        this.unit = null;
+    };
+
+    func IsVehicleMountable() -> Bool {
+        if !IsDefined(this.vehicle) {
+            return false;
+        };
+
+        if this.vehicle.ComputeIsVehicleUpsideDown()
+        || VehicleComponent.IsDriverSeatOccupiedByDeadNPC(GetGameInstance(),
+                                                          this.vehicle.GetEntityID())
+        || this.vehicle.GetFlatTireIndex() != -1
+        || this.vehicle.GetVehicleComponent().IsVehicleInDecay()
+        || this.vehicle.IsVehicleRemoteControlled()
+        || this.vehicle.IsDestroyed() {
+            return false;
+        };
+
+        return true;
+    };
+
+}
+
 public struct CyberpsychoEncountersNCPDGroundPoliceSquad {
     persistent let units: array<EntityID>;
     let passengerDaemon: ref<CyberpsychoEncountersNCPDVehiclePassengersMountedDaemon>;
