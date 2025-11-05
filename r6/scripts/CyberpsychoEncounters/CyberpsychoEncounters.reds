@@ -588,6 +588,78 @@ class CyberpsychoEncountersConvoyVehicleArrivalDaemon extends DelayDaemon  {
     };
 }
 
+class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends DelayDaemon {
+    let vehicle: wref<WheeledObject>;
+    let cmd: ref<AIVehicleJoinTrafficCommand>;
+    let unitMonitors: array<ref<CyberpsychoEncountersNCPDUnitMountCommandDispatcher>>;
+
+    func IsVehicleMountable() -> Bool {
+        if this.vehicle.ComputeIsVehicleUpsideDown()
+        || VehicleComponent.IsDriverSeatOccupiedByDeadNPC(this.gi,
+                                                          this.vehicle.GetEntityID())
+        || this.vehicle.GetFlatTireIndex() != -1
+        || this.vehicle.GetVehicleComponent().IsVehicleInDecay()
+        || this.vehicle.IsVehicleRemoteControlled()
+        || this.vehicle.IsDestroyed() {
+            return false;
+        };
+
+        return true;
+    };
+
+    func Call() -> Void {
+        if !IsDefined(this.vehicle) {
+            this.Repeat();
+            return;
+        };
+
+        if !this.IsVehicleMountable() {
+            this.Stop();
+            return;
+        };
+
+        for monitor in this.unitMonitors {
+            let u = monitor.unit;
+            if !VehicleComponent.IsMountedToProvidedVehicle(this.gi, u.GetEntityID(), this.vehicle) {
+                if IsDefined(this.cmd) {
+                    this.vehicle.GetAIComponent().CancelCommand(this.cmd);
+                    this.cmd = null;
+                };
+                this.Repeat();
+                return;
+            };
+        };
+
+        if IsDefined(this.cmd) {
+            let cmd_state = this.vehicle.GetAIComponent().GetCommandState(this.cmd);
+            if Equals(cmd_state, AICommandState.Enqueued)
+            || Equals(cmd_state, AICommandState.Executing) {
+                this.Repeat();
+                return;
+            };
+        };
+
+
+        let command: ref<AIVehicleJoinTrafficCommand> = new AIVehicleJoinTrafficCommand();
+        command.needDriver = true;
+        command.useKinematic = true;
+        this.vehicle.GetAIComponent().SendCommand(command);
+        this.cmd = command;
+        this.Repeat();
+    };
+
+    func OnGroundNCPDUnitDeath(notifier: ref<CyberpsychoEncountersNCPDUnitMountCommandDispatcher>) -> Void {
+        notifier.Cancel();
+        ArrayRemove(this.unitMonitors, notifier);
+    };
+
+    func Stop() -> Void {
+        for monitor in this.unitMonitors {
+            monitor.Cancel();
+        };
+    };
+}
+
 class StartCyberpsychoEncountersMaxtacAVResponseCallback extends DelayCallback {
 
     func Call() -> Void {
@@ -598,7 +670,7 @@ class StartCyberpsychoEncountersMaxtacAVResponseCallback extends DelayCallback {
 }
 
 public class CyberpsychoEncountersNCPDUnitMountCommandDispatcher {
-    let parent: wref<CyberpsychoEncountersNCPDVehiclePassengersMountedDaemon>;
+    let parent: wref<CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher>;
     let unit: ref<ScriptedPuppet>;
     let vehicle: wref<WheeledObject>;
     let cmd: ref<AIMountCommand>;
@@ -734,7 +806,7 @@ public class CyberpsychoEncountersNCPDUnitMountCommandDispatcher {
 
 public struct CyberpsychoEncountersNCPDGroundPoliceSquad {
     persistent let units: array<EntityID>;
-    let passengerDaemon: ref<CyberpsychoEncountersNCPDVehiclePassengersMountedDaemon>;
+    let passengerDaemon: ref<CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher>;
 }
 
 public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
