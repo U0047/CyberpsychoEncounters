@@ -597,7 +597,7 @@ class StartCyberpsychoEncountersMaxtacAVResponseCallback extends DelayCallback {
     };
 }
 
-public class CyberpsychoEncountersNCPDUnitMounter {
+public class CyberpsychoEncountersNCPDUnitMountCommandDispatcher {
     let parent: wref<CyberpsychoEncountersNCPDVehiclePassengersMountedDaemon>;
     let unit: ref<ScriptedPuppet>;
     let vehicle: wref<WheeledObject>;
