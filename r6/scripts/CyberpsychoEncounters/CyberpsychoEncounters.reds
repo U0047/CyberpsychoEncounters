@@ -459,18 +459,19 @@ class CyberpsychoEncountersPlayerSecondsAwayDaemon extends DelayDaemon {
 }
 
 class CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
-    let units: array<array<EntityID>>;
+    let squads: array<CyberpsychoEncountersNCPDGroundPoliceSquad>;
 
     func Call() -> Void {
         let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(this.gi);
         let units_to_delete: array<EntityID>;
+        let daemons_to_stop: array<ref<CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher>>;
         let player: ref<PlayerPuppet> = GetPlayer(this.gi);
         let player_pos: Vector4 = player.GetWorldPosition();
-        let i = 0;
-        while i < ArraySize(this.units) {
-            let ii = 0;
-            while ii < ArraySize(this.units[i]) {
-                let unitID = this.units[i][ii];
+        let s = 0;
+        while s < ArraySize(this.squads) {
+            let u = 0;
+            while u < ArraySize(this.squads[s].units) {
+                let unitID = this.squads[s].units[u];
                 let unit: wref<Entity> = GameInstance.FindEntityByID(this.gi,
                                                                      unitID);
                 let unit_pos = unit.GetWorldPosition();
@@ -479,28 +480,36 @@ class CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
                 if !IsDefined(unit)
                 || !unit.IsAttached()
                 || Vector4.DistanceSquared(player_pos, unit_pos) > 62500.00 {
+                    if IsDefined(unit as VehicleObject) {
+                        ArrayPush(daemons_to_stop, this.squads[s].passengerDaemon);
+                    };
                     ArrayPush(units_to_delete, unitID);
-                    ArrayRemove(this.units[i], unitID);
+                    ArrayRemove(this.squads[s].units, unitID);
                 };
-                ii += 1;
+                u += 1;
             };
 
-            if ArraySize(this.units[i]) == 0 {
-                ArrayRemove(this.units, this.units[i]);
+            if ArraySize(this.squads[s].units) == 0 {
+                ArrayRemove(this.squads, this.squads[s]);
             };
 
-            i += 1;
+            s += 1;
         };
 
         if ArraySize(units_to_delete) > 0 {
-            let all_units_deleted: Bool;
+            let all_units_deleted: Bool = ArraySize(this.squads) == 0;
             FTLog(s"[CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon][Call]: Deleting units: \(units_to_delete)");
-            if ArraySize(this.units) == 0 {
-                all_units_deleted = true;
+            psychoSys.OnGroundNCPDUnitsDeletionRequested(units_to_delete,
+                                                         daemons_to_stop, all_units_deleted);
+
+            if all_units_deleted {
                 FTLog(s"[CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon][Call]: All units deleted");
+                this.Stop();
+                return;
             };
-            psychoSys.OnGroundNCPDUnitsDeletionRequested(units_to_delete, all_units_deleted);
+
         };
+
         this.Repeat();
     };
 }
