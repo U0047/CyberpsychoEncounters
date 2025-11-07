@@ -630,18 +630,23 @@ class CyberpsychoEncountersConvoyVehicleArrivalDaemon extends DelayDaemon  {
 }
 
 class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends DelayDaemon {
-    let vehicle: wref<WheeledObject>;
+    let vehicleID: EntityID;
     let cmd: ref<AIVehicleJoinTrafficCommand>;
     let unitMonitors: array<ref<CyberpsychoEncountersNCPDUnitMountCommandDispatcher>>;
 
     func IsVehicleMountable() -> Bool {
-        if this.vehicle.ComputeIsVehicleUpsideDown()
+        let vehicle = GameInstance.FindEntityByID(GetGameInstance(), this.vehicleID) as WheeledObject;
+        if !IsDefined(vehicle) {
+            return false;
+        };
+
+        if vehicle.ComputeIsVehicleUpsideDown()
         || VehicleComponent.IsDriverSeatOccupiedByDeadNPC(this.gi,
-                                                          this.vehicle.GetEntityID())
-        || this.vehicle.GetFlatTireIndex() != -1
-        || this.vehicle.GetVehicleComponent().IsVehicleInDecay()
-        || this.vehicle.IsVehicleRemoteControlled()
-        || this.vehicle.IsDestroyed() {
+                                                          this.vehicleID)
+        || vehicle.GetFlatTireIndex() != -1
+        || vehicle.GetVehicleComponent().IsVehicleInDecay()
+        || vehicle.IsVehicleRemoteControlled()
+        || vehicle.IsDestroyed() {
             return false;
         };
 
@@ -649,7 +654,8 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
     };
 
     func Call() -> Void {
-        if !IsDefined(this.vehicle) {
+        let vehicle = GameInstance.FindEntityByID(GetGameInstance(), this.vehicleID) as WheeledObject;
+        if !IsDefined(vehicle) {
             this.Repeat();
             return;
         };
@@ -661,9 +667,9 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
 
         for monitor in this.unitMonitors {
             let u = monitor.unit;
-            if !VehicleComponent.IsMountedToProvidedVehicle(this.gi, u.GetEntityID(), this.vehicle) {
+            if !VehicleComponent.IsMountedToProvidedVehicle(this.gi, u.GetEntityID(), vehicle) {
                 if IsDefined(this.cmd) {
-                    this.vehicle.GetAIComponent().CancelCommand(this.cmd);
+                    vehicle.GetAIComponent().CancelCommand(this.cmd);
                     this.cmd = null;
                 };
                 this.Repeat();
@@ -672,7 +678,7 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
         };
 
         if IsDefined(this.cmd) {
-            let cmd_state = this.vehicle.GetAIComponent().GetCommandState(this.cmd);
+            let cmd_state = vehicle.GetAIComponent().GetCommandState(this.cmd);
             if Equals(cmd_state, AICommandState.Enqueued)
             || Equals(cmd_state, AICommandState.Executing) {
                 this.Repeat();
@@ -684,7 +690,7 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
         let command: ref<AIVehicleJoinTrafficCommand> = new AIVehicleJoinTrafficCommand();
         command.needDriver = true;
         command.useKinematic = true;
-        this.vehicle.GetAIComponent().SendCommand(command);
+        vehicle.GetAIComponent().SendCommand(command);
         this.cmd = command;
         this.Repeat();
     };
