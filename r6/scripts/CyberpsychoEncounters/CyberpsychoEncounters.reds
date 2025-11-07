@@ -931,6 +931,28 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.districtManager = GetDistrictManager();
         FTLog(s"[CyberpsychoEncountersEventSystem][OnRestored]: Units pending deletion? \(this.isUnitDeletionPending)");
         this.RequestDeleteUnits();
+        let s = 0;
+        while s < ArraySize(this.groundPoliceSquads) {
+            let passengerDaemon = new CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher();
+            this.groundPoliceSquads[s].passengerDaemon = passengerDaemon;
+            let vehID = this.groundPoliceSquads[s].units[0];
+            passengerDaemon.vehicleID = vehID;
+            let u = 1;
+            while u < ArraySize(this.groundPoliceSquads[s].units) {
+                let npcMonitor = new CyberpsychoEncountersNCPDUnitMountCommandDispatcher();
+                let npc: ref<ScriptedPuppet> = GameInstance.FindEntityByID(GetGameInstance(), this.groundPoliceSquads[s].units[u]) as ScriptedPuppet;
+                npcMonitor.parent = passengerDaemon;
+                npcMonitor.unit = npc;
+                npcMonitor.vehicleID = vehID;
+                npcMonitor.SetupListener();
+                ArrayPush(passengerDaemon.unitMonitors, npcMonitor);
+                u += 1;
+            };
+
+            s += 1;
+            passengerDaemon.Start(gi, 1.00, true);
+        };
+
         if EntityID.IsDefined(this.cyberpsychoID) {
             let psycho = GameInstance.FindEntityByID(gi, this.cyberpsychoID);
             FTLog("[CyberpsychoEncountersEventSystem][OnRestored]: Leftover psycho defined, creating deletion daemon.");
