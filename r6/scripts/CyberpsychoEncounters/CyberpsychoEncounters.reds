@@ -719,7 +719,7 @@ class StartCyberpsychoEncountersMaxtacAVResponseCallback extends DelayCallback {
 public class CyberpsychoEncountersNCPDUnitMountCommandDispatcher {
     let parent: wref<CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher>;
     let unit: ref<ScriptedPuppet>;
-    let vehicle: wref<WheeledObject>;
+    let vehicleID: EntityID;
     let cmd: ref<AIMountCommand>;
     let unitHLSCallback: ref<CallbackHandle>;
     let unitReactionBehaviorOutputCallback: ref<CallbackHandle>;
@@ -750,7 +750,12 @@ public class CyberpsychoEncountersNCPDUnitMountCommandDispatcher {
             return;
         };
 
-        if VehicleComponent.IsMountedToProvidedVehicle(GetGameInstance(), unitID, this.vehicle) {
+        let vehicle = GameInstance.FindEntityByID(GetGameInstance(), this.vehicleID) as WheeledObject;
+        if !IsDefined(vehicle) {
+            return;
+        };
+
+        if VehicleComponent.IsMountedToProvidedVehicle(GetGameInstance(), unitID, vehicle) {
             if Equals(cmd_state, AICommandState.Success) {
                 this.cmd = null;
             };
@@ -781,7 +786,12 @@ public class CyberpsychoEncountersNCPDUnitMountCommandDispatcher {
     cb func OnGroundNCPDUnitHLSChanged(hls: Int32) -> Void {
         let gi: GameInstance = GetGameInstance();
         let unitID = this.unit.GetEntityID();
-        if VehicleComponent.IsMountedToProvidedVehicle(gi, unitID, this.vehicle) {
+        let vehicle = GameInstance.FindEntityByID(GetGameInstance(), this.vehicleID) as WheeledObject;
+        if !IsDefined(vehicle) {
+            return;
+        };
+
+        if VehicleComponent.IsMountedToProvidedVehicle(gi, unitID, vehicle) {
             return;
         };
 
@@ -801,13 +811,18 @@ public class CyberpsychoEncountersNCPDUnitMountCommandDispatcher {
     };
 
     func TrySendMountCommand() -> Bool {
-        let vehAIComp = this.vehicle.GetAIComponent();
+        let vehicle = GameInstance.FindEntityByID(GetGameInstance(), this.vehicleID) as WheeledObject;
+        if !IsDefined(vehicle) {
+            return false;
+        };
+
+        let vehAIComp = vehicle.GetAIComponent();
         let unitID = this.unit.GetEntityID();
         let slot = vehAIComp.TryReserveSeatOrFirstAvailable(unitID, n"first_available");
         if IsNameValid(slot) {
             let mountData = new MountEventData();
             mountData.slotName = slot;
-            mountData.mountParentEntityId = this.vehicle.GetEntityID();
+            mountData.mountParentEntityId = this.vehicleID;
             mountData.isInstant = false;
             mountData.ignoreHLS = true;
             let mountCommand = new AIMountCommand();
@@ -832,17 +847,15 @@ public class CyberpsychoEncountersNCPDUnitMountCommandDispatcher {
     };
 
     func IsVehicleMountable() -> Bool {
-        if !IsDefined(this.vehicle) {
-            return false;
-        };
+        let vehicle = GameInstance.FindEntityByID(GetGameInstance(), this.vehicleID) as WheeledObject;
 
-        if this.vehicle.ComputeIsVehicleUpsideDown()
+        if vehicle.ComputeIsVehicleUpsideDown()
         || VehicleComponent.IsDriverSeatOccupiedByDeadNPC(GetGameInstance(),
-                                                          this.vehicle.GetEntityID())
-        || this.vehicle.GetFlatTireIndex() != -1
-        || this.vehicle.GetVehicleComponent().IsVehicleInDecay()
-        || this.vehicle.IsVehicleRemoteControlled()
-        || this.vehicle.IsDestroyed() {
+                                                          vehicle.GetEntityID())
+        || vehicle.GetFlatTireIndex() != -1
+        || vehicle.GetVehicleComponent().IsVehicleInDecay()
+        || vehicle.IsVehicleRemoteControlled()
+        || vehicle.IsDestroyed() {
             return false;
         };
 
