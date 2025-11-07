@@ -1888,7 +1888,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
                 let ii: Int32 = 1;
                 let passengerDaemon = new CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher();
-                passengerDaemon.vehicle = (veh as WheeledObject);
+                passengerDaemon.vehicleID = vehID;
                 squad.passengerDaemon = passengerDaemon;
                 while ii < ArraySize(squad.units) {
                     let npc = GameInstance.FindEntityByID(GetGameInstance(), squad.units[ii]) as ScriptedPuppet;
@@ -1897,7 +1897,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                     let npcMonitor = new CyberpsychoEncountersNCPDUnitMountCommandDispatcher();
                     npcMonitor.parent = passengerDaemon;
                     npcMonitor.unit = npc;
-                    npcMonitor.vehicle = veh as WheeledObject;
+                    npcMonitor.vehicleID = vehID;
                     npcMonitor.SetupListener();
                     ArrayPush(passengerDaemon.unitMonitors, npcMonitor);
                     NPCPuppet.ChangeHighLevelState(npc,
