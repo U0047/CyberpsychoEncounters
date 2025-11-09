@@ -634,25 +634,6 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
     let cmd: ref<AIVehicleJoinTrafficCommand>;
     let unitMonitors: array<ref<CyberpsychoEncountersNCPDUnitMountCommandDispatcher>>;
 
-    func IsVehicleMountable() -> Bool {
-        let vehicle = GameInstance.FindEntityByID(GetGameInstance(), this.vehicleID) as WheeledObject;
-        if !IsDefined(vehicle) {
-            return false;
-        };
-
-        if vehicle.ComputeIsVehicleUpsideDown()
-        || VehicleComponent.IsDriverSeatOccupiedByDeadNPC(this.gi,
-                                                          this.vehicleID)
-        || vehicle.GetFlatTireIndex() != -1
-        || vehicle.GetVehicleComponent().IsVehicleInDecay()
-        || vehicle.IsVehicleRemoteControlled()
-        || vehicle.IsDestroyed() {
-            return false;
-        };
-
-        return true;
-    };
-
     func Call() -> Void {
         let vehicle = GameInstance.FindEntityByID(GetGameInstance(), this.vehicleID) as WheeledObject;
         if !IsDefined(vehicle) {
@@ -660,7 +641,8 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
             return;
         };
 
-        if !this.IsVehicleMountable() {
+        let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(this.gi);
+        if !psychoSys.CanConvoyVehicleBeMounted(vehicle) {
             this.Stop();
             return;
         };
