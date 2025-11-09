@@ -1937,37 +1937,32 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         };
     };
 
-    func TryMountGroundNCPDUnitToVehicle(unit: ref<Entity>,
-                                         vehID: EntityID,
-                                         slot: CName) -> Bool {
-
-        let gi: GameInstance = GetGameInstance();
-        let veh: ref<VehicleObject> = GameInstance.FindEntityByID(gi, vehID) as VehicleObject;
-        let unit_as_puppet = unit as ScriptedPuppet;
-        let unit_as_g_obj = unit as GameObject;
-        if !IsDefined(veh) || veh.IsDestroyed() || veh.ComputeIsVehicleUpsideDown() || (veh as WheeledObject).GetFlatTireIndex() != -1 {
-            FTLog("[CyberpsychoEncountersEventSystem][TryMountGroundNCPDUnitToVehicle]: Failed to mount vehicle. Reason: Vehicle not drivable.");
+    func CanConvoyVehicleBeMounted(veh: wref<WheeledObject>) -> Bool {
+        if !IsDefined(veh)
+        || veh.IsDestroyed()
+        || veh.ComputeIsVehicleUpsideDown()
+        || veh.GetFlatTireIndex() != -1
+        || veh.GetVehicleComponent().IsVehicleInDecay()
+        || VehicleComponent.IsDriverSeatOccupiedByDeadNPC(GetGameInstance(),
+                                                          veh.GetEntityID()) {
             return false;
         };
 
+        return true;
+    };
+
+    func CanGroundUnitMountConvoyVehicle(unit: ref<ScriptedPuppet>, veh: wref<WheeledObject>) -> Bool {
         if !IsDefined(unit)
-        || (unit_as_puppet).IsDead()
-        || ScriptedPuppet.IsDefeated((unit_as_g_obj))
-        || ScriptedPuppet.IsUnconscious((unit_as_g_obj)) {
-            FTLog("[CyberpsychoEncountersEventSystem][TryMountGroundNCPDUnitToVehicle]: Failed to mount vehicle. Reason: failed puppet preconditions");
+        || unit.IsDead()
+        || ScriptedPuppet.IsDefeated(unit)
+        || ScriptedPuppet.IsUnconscious(unit) {
             return false;
         };
 
-        let mountData = new MountEventData();
-        mountData.slotName = slot;
-        mountData.mountParentEntityId = vehID;
-        mountData.isInstant = false;
-        mountData.ignoreHLS = true;
-        let mountCommand = new AIMountCommand();
-        mountCommand.mountData = mountData;
-        let evt = new AICommandEvent();
-        evt.command = mountCommand;
-        unit.QueueEvent(evt);
+        if !this.CanConvoyVehicleBeMounted(veh) {
+            return false;
+        };
+
         return true;
     };
 
