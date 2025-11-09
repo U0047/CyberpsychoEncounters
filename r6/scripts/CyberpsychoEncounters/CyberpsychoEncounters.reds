@@ -2089,41 +2089,35 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
     };
 
     func GetCyberpsychoGroundPoliceEntitySpecs() -> array<array<ref<DynamicEntitySpec>>> {
+        let scriptableContainer = GameInstance.GetScriptableSystemsContainer(GetGameInstance());
+        let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
+        let convoyData = TweakDBInterface.GetPreventionHeatDataRecord(t"PreventionData.CyberpsychoEncounters_Convoy");
         let ground_police_specs: array<array<ref<DynamicEntitySpec>>>;
         let squad_specs: array<ref<DynamicEntitySpec>>;
         let vehicle_spec: ref<DynamicEntitySpec> = new DynamicEntitySpec();
-        let veh_record: TweakDBID;
-        let police_record_IDs: array<TweakDBID> = [t"Character.ncpd_hwp_gunner2_defender_mb_rare",
-                                                   t"Character.ncpd_police_shotgun3_crusher_mb_elite",
-                                                   t"Character.ncpd_police_ranged2_copperhead_wa",
-                                                   t"Character.ncpd_police_ranged2_copperhead_ma"];
-        let n: Uint8 = Cast<Uint8>(RandRange(0, 10));
-        let i: Int32 = 0;
-        if n > Cast<Uint8>(8) {
-            veh_record = t"Vehicle.CyberpsychoEncounters_v_standard3_militech_hellhound_police";
-        } else {
-            if n > Cast<Uint8>(6) {
-              veh_record = t"Vehicle.v_standard25_thorton_merrimac_police";
-            } else {
-              veh_record = t"Vehicle.v_standard3_chevalier_emperor_police_prevention";
-            };
-        };
-
-
-        vehicle_spec.recordID = veh_record;
+        let vehicle_pool: array<wref<PreventionVehiclePoolData_Record>>;
+        let vehicle_records: array<wref<Vehicle_Record>>;
+        let veh_record: wref<Vehicle_Record>;
+        let character_pool: array<wref<PreventionUnitPoolData_Record>>;
+        convoyData.VehicleRecordPool(vehicle_pool);
+        preventionSys.GetVehicleRecordFromPool(vehicle_pool, veh_record);
+        convoyData.UnitRecordsPool(character_pool);
+        vehicle_spec.recordID = veh_record.GetRecordID();
         vehicle_spec.persistState = true;
         vehicle_spec.persistSpawn = true;
         vehicle_spec.alwaysSpawned = false;
         vehicle_spec.tags = [n"CyberpsychoEncounters_vehicle_police"];
 
-        i = 0;
+        let i = 0;
         while i < 3 {
             let squad_specs: array<ref<DynamicEntitySpec>>;
             ArrayPush(squad_specs, vehicle_spec);
             let ii = 0;
             while ii < 5 {
                 let npc_spec: ref<DynamicEntitySpec> = new DynamicEntitySpec();
-                npc_spec.recordID = police_record_IDs[ii];
+                let character_TDBID: TweakDBID;
+                preventionSys.GetCharacterRecordFromPool(character_pool, character_TDBID);
+                npc_spec.recordID = character_TDBID;
                 npc_spec.persistState = true;
                 npc_spec.persistSpawn = true;
                 npc_spec.alwaysSpawned = false;
