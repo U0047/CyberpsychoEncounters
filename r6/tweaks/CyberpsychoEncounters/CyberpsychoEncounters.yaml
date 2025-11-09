@@ -18,6 +18,85 @@ MinimapMappinUIProfile.CyberpsychoEncountersEvent:
   $base: MinimapMappinUIProfile.Default
   priority: 1
 
+PreventionData.CyberpsychoEncounters_Convoy:
+  $type: gamedataPreventionHeatData_Record
+  unitsCount: 12
+  vehicleCount: 1
+  unitRecordsPool:
+    - t"PreventionData.CyberpsychoEncounters_Convoy_Unit1"
+    - t"PreventionData.CyberpsychoEncounters_Convoy_Unit2"
+    - t"PreventionData.CyberpsychoEncounters_Convoy_Unit3"
+    - t"PreventionData.CyberpsychoEncounters_Convoy_Unit4"
+    - t"PreventionData.CyberpsychoEncounters_Convoy_Unit5"
+    - t"PreventionData.CyberpsychoEncounters_Convoy_Unit6"
+    - t"PreventionData.CyberpsychoEncounters_Convoy_Unit7"
+  vehicleRecordPool:
+    - t"PreventionData.CyberpsychoEncounters_Convoy_Hellhound"
+    - t"PreventionData.CyberpsychoEncounters_Convoy_Merrimac"
+    - t"PreventionData.CyberpsychoEncounters_Convoy_Emperor"
+
+PreventionData.CyberpsychoEncounters_Convoy_Hellhound:
+  $type: gamedataPreventionVehiclePoolData_Record
+  vehicleRecord: t"Vehicle.CyberpsychoEncounters_v_standard3_militech_hellhound_police"
+  weight: 0.80
+
+PreventionData.CyberpsychoEncounters_Convoy_Merrimac:
+  $type: gamedataPreventionVehiclePoolData_Record
+  vehicleRecord: t"Vehicle.v_standard25_thorton_merrimac_police"
+  weight: 1.00
+
+PreventionData.CyberpsychoEncounters_Convoy_Emperor:
+  $type: gamedataPreventionVehiclePoolData_Record
+  vehicleRecord: t"Vehicle.v_standard3_chevalier_emperor_police_prevention"
+  weight: 1.00
+
+PreventionData.CyberpsychoEncounters_Convoy_Unit1:
+  $type: gamedataPreventionUnitPoolData_Record
+  characterRecord: t"Character.ncpd_hwp_gunner2_defender_mb_rare"
+  weight: 1.00
+
+PreventionData.CyberpsychoEncounters_Convoy_Unit2:
+  $type: gamedataPreventionUnitPoolData_Record
+  characterRecord: t"Character.ncpd_police_shotgun3_crusher_mb_elite"
+  weight: 0.50
+
+PreventionData.CyberpsychoEncounters_Convoy_Unit3:
+  $type: gamedataPreventionUnitPoolData_Record
+  characterRecord: t"Character.ncpd_police_ranged2_copperhead_wa"
+  weight: 0.25
+
+PreventionData.CyberpsychoEncounters_Convoy_Unit4:
+  $type: gamedataPreventionUnitPoolData_Record
+  characterRecord: t"Character.ncpd_police_ranged2_copperhead_ma"
+  weight: 0.25
+
+PreventionData.CyberpsychoEncounters_Convoy_Unit5:
+  $type: gamedataPreventionUnitPoolData_Record
+  characterRecord: t"Character.arr_ncpd_enforcer_shotgun2_tactician_ma_rare"
+  weight: 0.10
+
+PreventionData.CyberpsychoEncounters_Convoy_Unit6:
+  $type: gamedataPreventionUnitPoolData_Record
+  characterRecord: t"Character.CyberpsychoEncounters_NCPD_Convoy_Enforcer1"
+  weight: 1.00
+
+PreventionData.CyberpsychoEncounters_Convoy_Unit7:
+  $type: gamedataPreventionUnitPoolData_Record
+  characterRecord: t"Character.CyberpsychoEncounters_NCPD_Convoy_Enforcer2"
+  weight: 1.00
+
+
+Character.CyberpsychoEncounters_NCPD_Convoy_Enforcer1:
+  $base: t"Character.ncpd_police_ranged2_copperhead_ma"
+  visualTags:
+    - !remove n"Police"
+    - !append n"Enforcer"
+
+Character.CyberpsychoEncounters_NCPD_Convoy_Enforcer2:
+  $base: t"Character.ncpd_police_shotgun3_crusher_mb_elite"
+  visualTags:
+    - !append n"HWP"
+
 Vehicle.CyberpsychoEncounters_v_standard3_militech_hellhound_police:
   $base: Vehicle.v_standard3_militech_hellhound_police
   vehDataPackage: Vehicle.CyberpsychoEncounters_v_standard3_militech_hellhound_police_data_package
@@ -171,7 +250,6 @@ Loot.CyberpsychoEncounters_BaseDropTable:
   maxItemsToLoot: 1
   minItemsToLoot: 1
   queries: []
-
 
 Loot.CyberpsychoEncounters_LMGDropTable:
   $base: Loot.CyberpsychoEncounters_BaseDropTable
