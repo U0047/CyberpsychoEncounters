@@ -787,6 +787,11 @@ public class CyberpsychoEncountersNCPDUnitMountCommandDispatcher {
         let gi: GameInstance = GetGameInstance();
         let unitID = this.unit.GetEntityID();
         let vehicle = GameInstance.FindEntityByID(GetGameInstance(), this.vehicleID) as WheeledObject;
+        if hls == 3 || hls == 7 {
+            this.parent.OnGroundNCPDUnitDeath(this);
+            return;
+        };
+
         if !IsDefined(vehicle) {
             return;
         };
