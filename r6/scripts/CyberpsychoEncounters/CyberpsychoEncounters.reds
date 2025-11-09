@@ -2665,7 +2665,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 }
 
 public class CyberpsychoEncountersSettings {
-    @runtimeProperty("ModSettings.mod", "Random Cyberpsychos")
+    @runtimeProperty("ModSettings.mod", "Cyberpsycho Encounters")
     @runtimeProperty("ModSettings.displayName", "Cooldown Minutes")
     @runtimeProperty("ModSettings.description", "Minimum amount of minutes between two cyberpsycho attacks.")
     @runtimeProperty("ModSettings.step", "5")
@@ -2674,7 +2674,7 @@ public class CyberpsychoEncountersSettings {
     @runtimeProperty("ModSettings.dependency", "enabled")
     let cooldownMinutes: Int32 = 15;
 
-    @runtimeProperty("ModSettings.mod", "Random Cyberpsychos")
+    @runtimeProperty("ModSettings.mod", "Cyberpsycho Encounters")
     @runtimeProperty("ModSettings.displayName", "Encounter Multiplier")
     @runtimeProperty("ModSettings.description", "Modifies how frequently cyberpsycho attacks occur. Higher values increase frequency.")
     @runtimeProperty("ModSettings.step", "0.05")
@@ -2683,7 +2683,7 @@ public class CyberpsychoEncountersSettings {
     @runtimeProperty("ModSettings.dependency", "enabled")
     let encounterMultiplier: Float = 1.00;
 
-    @runtimeProperty("ModSettings.mod", "Random Cyberpsychos")
+    @runtimeProperty("ModSettings.mod", "Cyberpsycho Encounters")
     @runtimeProperty("ModSettings.displayName", "Cyberpsycho Friendly Targeting")
     @runtimeProperty("ModSettings.description", "Prevents cyberpsychos from attacking characters that are friendly to the player such as quest characters.")
     @runtimeProperty("ModSettings.dependency", "enabled")
