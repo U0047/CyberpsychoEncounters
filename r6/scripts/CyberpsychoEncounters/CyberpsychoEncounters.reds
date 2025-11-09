@@ -2651,7 +2651,7 @@ public class CyberpsychoEncountersSettings {
 
     @runtimeProperty("ModSettings.mod", "Cyberpsycho Encounters")
     @runtimeProperty("ModSettings.displayName", "Cyberpsycho Friendly Targeting")
-    @runtimeProperty("ModSettings.description", "Prevents cyberpsychos from attacking characters that are friendly to the player such as quest characters.")
+    @runtimeProperty("ModSettings.description", "Prevents cyberpsychos from attacking characters that are friendly to the player, such as quest characters.")
     @runtimeProperty("ModSettings.dependency", "enabled")
     let canCyberpsychoTargetFriendly: Bool = false;
 }
