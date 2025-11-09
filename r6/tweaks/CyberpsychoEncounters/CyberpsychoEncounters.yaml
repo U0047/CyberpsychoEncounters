@@ -53,7 +53,7 @@ PreventionData.CyberpsychoEncounters_Convoy_Emperor:
 PreventionData.CyberpsychoEncounters_Convoy_Unit1:
   $type: gamedataPreventionUnitPoolData_Record
   characterRecord: t"Character.ncpd_hwp_gunner2_defender_mb_rare"
-  weight: 1.00
+  weight: 0.80
 
 PreventionData.CyberpsychoEncounters_Convoy_Unit2:
   $type: gamedataPreventionUnitPoolData_Record
@@ -63,17 +63,17 @@ PreventionData.CyberpsychoEncounters_Convoy_Unit2:
 PreventionData.CyberpsychoEncounters_Convoy_Unit3:
   $type: gamedataPreventionUnitPoolData_Record
   characterRecord: t"Character.ncpd_police_ranged2_copperhead_wa"
-  weight: 0.25
+  weight: 0.10
 
 PreventionData.CyberpsychoEncounters_Convoy_Unit4:
   $type: gamedataPreventionUnitPoolData_Record
   characterRecord: t"Character.ncpd_police_ranged2_copperhead_ma"
-  weight: 0.25
+  weight: 0.10
 
 PreventionData.CyberpsychoEncounters_Convoy_Unit5:
   $type: gamedataPreventionUnitPoolData_Record
   characterRecord: t"Character.arr_ncpd_enforcer_shotgun2_tactician_ma_rare"
-  weight: 0.10
+  weight: 0.80
 
 PreventionData.CyberpsychoEncounters_Convoy_Unit6:
   $type: gamedataPreventionUnitPoolData_Record
@@ -83,8 +83,7 @@ PreventionData.CyberpsychoEncounters_Convoy_Unit6:
 PreventionData.CyberpsychoEncounters_Convoy_Unit7:
   $type: gamedataPreventionUnitPoolData_Record
   characterRecord: t"Character.CyberpsychoEncounters_NCPD_Convoy_Enforcer2"
-  weight: 1.00
-
+  weight: 0.50
 
 Character.CyberpsychoEncounters_NCPD_Convoy_Enforcer1:
   $base: t"Character.ncpd_police_ranged2_copperhead_ma"
