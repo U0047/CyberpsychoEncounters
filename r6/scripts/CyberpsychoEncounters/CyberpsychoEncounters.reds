@@ -851,22 +851,6 @@ public class CyberpsychoEncountersNCPDUnitMountCommandDispatcher {
         this.unit = null;
     };
 
-    func IsVehicleMountable() -> Bool {
-        let vehicle = GameInstance.FindEntityByID(GetGameInstance(), this.vehicleID) as WheeledObject;
-
-        if vehicle.ComputeIsVehicleUpsideDown()
-        || VehicleComponent.IsDriverSeatOccupiedByDeadNPC(GetGameInstance(),
-                                                          vehicle.GetEntityID())
-        || vehicle.GetFlatTireIndex() != -1
-        || vehicle.GetVehicleComponent().IsVehicleInDecay()
-        || vehicle.IsVehicleRemoteControlled()
-        || vehicle.IsDestroyed() {
-            return false;
-        };
-
-        return true;
-    };
-
 }
 
 public struct CyberpsychoEncountersNCPDGroundPoliceSquad {
