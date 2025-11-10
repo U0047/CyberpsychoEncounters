@@ -1906,7 +1906,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                 while ii < ArraySize(squad.units) {
                     // insert a bit of randomization since it looks strange if
                     // every unit walks off.
-                    if RandRange(0, 2) > 0 {
+                    if RandRange(0, 6) > 1 {
                         let npc = GameInstance.FindEntityByID(GetGameInstance(), squad.units[ii]) as ScriptedPuppet;
                         (npc as ScriptedPuppet).TryRegisterToPrevention();
                         let cmd: ref<AIJoinCrowdCommand>;
