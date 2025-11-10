@@ -1861,6 +1861,8 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.lastEncounterSeconds = 0u;
         SaveLocksManager.RequestSaveLockRemove(gi, n"CyberpsychoEncountersEventInProgress");
         FastTravelSystem.RemoveFastTravelLock(n"CyberpsychoEncountersEventInProgress", gi);
+        // For some reason the healthbar doesn't always hide unless forced.
+        BossHealthBarGameController.ReevaluateBossHealthBar(cyberpsycho, GetPlayer(gi));
     };
 
     func EndNCPDNpcResponse() -> Void {
