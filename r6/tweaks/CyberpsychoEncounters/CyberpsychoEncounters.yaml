@@ -38,7 +38,7 @@ PreventionData.CyberpsychoEncounters_Convoy:
 PreventionData.CyberpsychoEncounters_Convoy_Hellhound:
   $type: gamedataPreventionVehiclePoolData_Record
   vehicleRecord: t"Vehicle.CyberpsychoEncounters_v_standard3_militech_hellhound_police"
-  weight: 0.80
+  weight: 0.70
 
 PreventionData.CyberpsychoEncounters_Convoy_Merrimac:
   $type: gamedataPreventionVehiclePoolData_Record
