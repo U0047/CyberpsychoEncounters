@@ -1911,6 +1911,9 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                         (npc as ScriptedPuppet).TryRegisterToPrevention();
                         let cmd: ref<AIJoinCrowdCommand>;
                         AIComponent.SendCommand(npc, cmd);
+                        reactionSystem.TryAndJoinTraffic(npc,
+                                                         Vector4.Vector4To3(GetPlayer(gi).GetWorldPosition()),
+                                                         false);
                     };
                     ii += 1;
                 };
