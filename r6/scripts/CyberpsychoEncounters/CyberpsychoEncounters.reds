@@ -1877,8 +1877,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             let squad = this.groundPoliceSquads[i];
             let vehID = squad.units[0];
             let veh: ref<VehicleObject> = GameInstance.FindEntityByID(gi, vehID) as VehicleObject;
-            if IsDefined(veh) {
-
+            if this.CanConvoyVehicleBeMounted((veh as WheeledObject)) {
                 let ii: Int32 = 1;
                 let passengerDaemon = new CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher();
                 passengerDaemon.vehicleID = vehID;
@@ -1887,12 +1886,14 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                     let npc = GameInstance.FindEntityByID(GetGameInstance(), squad.units[ii]) as ScriptedPuppet;
                     preventionSys.RegisterPreventionUnit(npc, DynamicVehicleType.Car, false);
                     (npc as ScriptedPuppet).TryRegisterToPrevention();
-                    let npcMonitor = new CyberpsychoEncountersNCPDUnitMountCommandDispatcher();
-                    npcMonitor.parent = passengerDaemon;
-                    npcMonitor.unit = npc;
-                    npcMonitor.vehicleID = vehID;
-                    npcMonitor.SetupListener();
-                    ArrayPush(passengerDaemon.unitMonitors, npcMonitor);
+                    if this.CanGroundUnitMountConvoyVehicle((npc as ScriptedPuppet), (veh as WheeledObject)) {
+                        let npcMonitor = new CyberpsychoEncountersNCPDUnitMountCommandDispatcher();
+                        npcMonitor.parent = passengerDaemon;
+                        npcMonitor.unit = npc;
+                        npcMonitor.vehicleID = vehID;
+                        npcMonitor.SetupListener();
+                        ArrayPush(passengerDaemon.unitMonitors, npcMonitor);
+                    };
                     NPCPuppet.ChangeHighLevelState(npc,
                                                    gamedataNPCHighLevelState.Relaxed);
                     ii += 1;
