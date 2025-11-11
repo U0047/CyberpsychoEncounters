@@ -925,7 +925,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     public cb func OnModSettingsChange() -> Void {
         this.settings = new CyberpsychoEncountersSettings();
-        //this.OnCooldownMinutesChanged();
     };
 
     func GetFrequencyMultiplier() -> Float {
