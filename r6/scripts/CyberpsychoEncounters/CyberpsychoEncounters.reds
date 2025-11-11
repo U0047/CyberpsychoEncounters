@@ -830,7 +830,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     let districtManager: ref<DistrictManager>;
 
-    let isCyberpsychoEventInProgress: Bool = false;
+    persistent let isCyberpsychoEventInProgress: Bool = false;
 
     let playerCivsKilled: Uint8;
 
