@@ -1861,8 +1861,8 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         while i < ArraySize(this.groundPoliceSquads) {
             let squad = this.groundPoliceSquads[i];
             let vehID = squad.units[0];
-            let veh: ref<VehicleObject> = GameInstance.FindEntityByID(gi, vehID) as VehicleObject;
-            if this.CanConvoyVehicleBeMounted((veh as WheeledObject)) {
+            let veh: ref<WheeledObject> = GameInstance.FindEntityByID(gi, vehID) as WheeledObject;
+            if this.CanConvoyVehicleBeMounted(veh) {
                 let ii: Int32 = 1;
                 let vehicleJoinTrafficDispatcher = new CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher();
                 vehicleJoinTrafficDispatcher.vehicleID = vehID;
@@ -1871,7 +1871,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                     let npc = GameInstance.FindEntityByID(GetGameInstance(), squad.units[ii]) as ScriptedPuppet;
                     preventionSys.RegisterPreventionUnit(npc, DynamicVehicleType.Car, false);
                     (npc as ScriptedPuppet).TryRegisterToPrevention();
-                    if this.CanGroundUnitMountConvoyVehicle((npc as ScriptedPuppet), (veh as WheeledObject)) {
+                    if this.CanGroundUnitMountConvoyVehicle(npc, veh) {
                         let mountDispatcher = new CyberpsychoEncountersNCPDUnitMountCommandDispatcher();
                         mountDispatcher.parent = vehicleJoinTrafficDispatcher;
                         mountDispatcher.unit = npc;
@@ -1891,7 +1891,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                     // every unit walks off.
                     if RandRange(0, 6) > 1 {
                         let npc = GameInstance.FindEntityByID(GetGameInstance(), squad.units[ii]) as ScriptedPuppet;
-                        (npc as ScriptedPuppet).TryRegisterToPrevention();
+                        npc.TryRegisterToPrevention();
                         let cmd: ref<AIJoinCrowdCommand>;
                         AIComponent.SendCommand(npc, cmd);
                         reactionSystem.TryAndJoinTraffic(npc,
