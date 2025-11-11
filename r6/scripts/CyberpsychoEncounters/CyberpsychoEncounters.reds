@@ -15,7 +15,7 @@ import Utils2077.SpatialUtils.{GetDistrictManager,
 public final static func IsInCombatWithTarget(npc: wref<ScriptedPuppet>, target: ref<Entity>) -> Bool {
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
     let preventionSys = GameInstance.GetScriptableSystemsContainer(GetGameInstance()).Get(n"PreventionSystem") as PreventionSystem;
-    if psychoSys.isCyberpsychoEventInProgress()
+    if psychoSys.isCyberpsychoCombatStarted()
     && !psychoSys.isCyberpsychoDefeated()
     && Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
         if (target as GameObject).IsPlayer() && npc.IsPrevention() {
@@ -62,7 +62,7 @@ protected func Update(context: ScriptExecutionContext) -> AIbehaviorUpdateOutcom
 public final static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>,
                                                       target: ref<GameObject>) -> Bool {
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
-    if psychoSys.isCyberpsychoEventInProgress() && owner.IsPrevention() {
+    if psychoSys.isCyberpsychoCombatStarted() && owner.IsPrevention() {
         if (target as ScriptedPuppet).IsCivilian() || (target as ScriptedPuppet).IsCrowd() {
             return false;
         };
