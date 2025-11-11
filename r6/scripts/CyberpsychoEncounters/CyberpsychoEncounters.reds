@@ -615,7 +615,7 @@ class CyberpsychoEncountersConvoyVehicleArrivalDaemon extends DelayDaemon  {
 class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends DelayDaemon {
     let vehicleID: EntityID;
     let cmd: ref<AIVehicleJoinTrafficCommand>;
-    let unitMonitors: array<ref<CyberpsychoEncountersNCPDUnitMountCommandDispatcher>>;
+    let unitMountDispatchers: array<ref<CyberpsychoEncountersNCPDUnitMountCommandDispatcher>>;
 
     func Call() -> Void {
         let vehicle = GameInstance.FindEntityByID(GetGameInstance(), this.vehicleID) as WheeledObject;
@@ -630,7 +630,7 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
             return;
         };
 
-        for monitor in this.unitMonitors {
+        for monitor in this.unitMountDispatchers {
             let u = monitor.unit;
             if !VehicleComponent.IsMountedToProvidedVehicle(this.gi, u.GetEntityID(), vehicle) {
                 if IsDefined(this.cmd) {
@@ -662,11 +662,11 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
 
     func OnGroundNCPDUnitDeath(notifier: ref<CyberpsychoEncountersNCPDUnitMountCommandDispatcher>) -> Void {
         notifier.Cancel();
-        ArrayRemove(this.unitMonitors, notifier);
+        ArrayRemove(this.unitMountDispatchers, notifier);
     };
 
     func Stop() -> Void {
-        for monitor in this.unitMonitors {
+        for monitor in this.unitMountDispatchers {
             monitor.Cancel();
         };
     };
@@ -899,7 +899,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                 mountDispatcher.unit = npc;
                 mountDispatcher.vehicleID = vehID;
                 mountDispatcher.SetupListener();
-                ArrayPush(vehicleJoinTrafficDispatcher.unitMonitors, mountDispatcher);
+                ArrayPush(vehicleJoinTrafficDispatcher.unitMountDispatchers, mountDispatcher);
                 u += 1;
             };
 
@@ -1878,7 +1878,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                         mountDispatcher.unit = npc;
                         mountDispatcher.vehicleID = vehID;
                         mountDispatcher.SetupListener();
-                        ArrayPush(vehicleJoinTrafficDispatcher.unitMonitors, mountDispatcher);
+                        ArrayPush(vehicleJoinTrafficDispatcher.unitMountDispatchers, mountDispatcher);
                     };
                     NPCPuppet.ChangeHighLevelState(npc,
                                                    gamedataNPCHighLevelState.Relaxed);
