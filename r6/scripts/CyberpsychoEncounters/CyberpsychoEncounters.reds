@@ -1181,6 +1181,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             mappinSys.UnregisterMappin(this.cyberpsychoMappinID);
             this.cyberpsychoMappinID = this.RegisterPsychoMappin(cyberpsycho);
         };
+
         if IsDefined(this.playerSecondsAwayDaemon) {
             this.playerSecondsAwayDaemon.Stop();
         };
