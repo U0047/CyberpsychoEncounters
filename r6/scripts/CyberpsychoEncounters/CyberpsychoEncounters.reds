@@ -1823,6 +1823,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let attitudeSys = GameInstance.GetAttitudeSystem(gi);
         let psychoStimBroacaster = cyberpsycho.GetStimBroadcasterComponent();
         let cyberpsycho_stats_ID = Cast<StatsObjectID>(cyberpsycho.GetEntityID());
+        this.isCyberpsychoCombatStarted = false;
         mappinSys.UnregisterMappin(this.cyberpsychoMappinID);
         attitudeSys.SetAttitudeGroupRelationfromTweakPersistent(t"Attitudes.Group_Police",
                                                                 t"Attitudes.Group_Civilian",
@@ -1963,7 +1964,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         } else {
             this.lastEncounterSeconds = 0u;
         };
-        this.isCyberpsychoCombatStarted = false;
         preventionSys.TogglePreventionSystem(true);
         this.StartNewMinutesSinceLastEncounterCallback();
         SaveLocksManager.RequestSaveLockRemove(gi, n"CyberpsychoEncountersEventInProgress");
