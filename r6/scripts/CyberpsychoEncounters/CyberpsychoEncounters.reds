@@ -496,7 +496,7 @@ class CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
                 || !unit.IsAttached()
                 || Vector4.DistanceSquared(player_pos, unit_pos) > 62500.00 {
                     if IsDefined(unit as VehicleObject) {
-                        ArrayPush(daemons_to_stop, this.squads[s].passengerDaemon);
+                        ArrayPush(daemons_to_stop, this.squads[s].vehicleJoinTrafficDispatcher);
                     };
                     ArrayPush(units_to_delete, unitID);
                     ArrayRemove(this.squads[s].units, unitID);
@@ -820,7 +820,7 @@ public class CyberpsychoEncountersNCPDUnitMountCommandDispatcher {
 
 public struct CyberpsychoEncountersNCPDGroundPoliceSquad {
     persistent let units: array<EntityID>;
-    let passengerDaemon: ref<CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher>;
+    let vehicleJoinTrafficDispatcher: ref<CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher>;
 }
 
 public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
@@ -887,24 +887,24 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.RequestDeleteUnits();
         let s = 0;
         while s < ArraySize(this.groundPoliceSquads) {
-            let passengerDaemon = new CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher();
-            this.groundPoliceSquads[s].passengerDaemon = passengerDaemon;
+            let vehicleJoinTrafficDispatcher = new CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher();
+            this.groundPoliceSquads[s].vehicleJoinTrafficDispatcher = vehicleJoinTrafficDispatcher;
             let vehID = this.groundPoliceSquads[s].units[0];
-            passengerDaemon.vehicleID = vehID;
+            vehicleJoinTrafficDispatcher.vehicleID = vehID;
             let u = 1;
             while u < ArraySize(this.groundPoliceSquads[s].units) {
                 let mountDispatcher = new CyberpsychoEncountersNCPDUnitMountCommandDispatcher();
                 let npc: ref<ScriptedPuppet> = GameInstance.FindEntityByID(GetGameInstance(), this.groundPoliceSquads[s].units[u]) as ScriptedPuppet;
-                mountDispatcher.parent = passengerDaemon;
+                mountDispatcher.parent = vehicleJoinTrafficDispatcher;
                 mountDispatcher.unit = npc;
                 mountDispatcher.vehicleID = vehID;
                 mountDispatcher.SetupListener();
-                ArrayPush(passengerDaemon.unitMonitors, mountDispatcher);
+                ArrayPush(vehicleJoinTrafficDispatcher.unitMonitors, mountDispatcher);
                 u += 1;
             };
 
             s += 1;
-            passengerDaemon.Start(gi, 1.00, true);
+            vehicleJoinTrafficDispatcher.Start(gi, 1.00, true);
         };
 
         if EntityID.IsDefined(this.cyberpsychoID) {
@@ -1865,26 +1865,26 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             let veh: ref<VehicleObject> = GameInstance.FindEntityByID(gi, vehID) as VehicleObject;
             if this.CanConvoyVehicleBeMounted((veh as WheeledObject)) {
                 let ii: Int32 = 1;
-                let passengerDaemon = new CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher();
-                passengerDaemon.vehicleID = vehID;
-                squad.passengerDaemon = passengerDaemon;
+                let vehicleJoinTrafficDispatcher = new CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher();
+                vehicleJoinTrafficDispatcher.vehicleID = vehID;
+                squad.vehicleJoinTrafficDispatcher = vehicleJoinTrafficDispatcher;
                 while ii < ArraySize(squad.units) {
                     let npc = GameInstance.FindEntityByID(GetGameInstance(), squad.units[ii]) as ScriptedPuppet;
                     preventionSys.RegisterPreventionUnit(npc, DynamicVehicleType.Car, false);
                     (npc as ScriptedPuppet).TryRegisterToPrevention();
                     if this.CanGroundUnitMountConvoyVehicle((npc as ScriptedPuppet), (veh as WheeledObject)) {
                         let mountDispatcher = new CyberpsychoEncountersNCPDUnitMountCommandDispatcher();
-                        mountDispatcher.parent = passengerDaemon;
+                        mountDispatcher.parent = vehicleJoinTrafficDispatcher;
                         mountDispatcher.unit = npc;
                         mountDispatcher.vehicleID = vehID;
                         mountDispatcher.SetupListener();
-                        ArrayPush(passengerDaemon.unitMonitors, mountDispatcher);
+                        ArrayPush(vehicleJoinTrafficDispatcher.unitMonitors, mountDispatcher);
                     };
                     NPCPuppet.ChangeHighLevelState(npc,
                                                    gamedataNPCHighLevelState.Relaxed);
                     ii += 1;
                 };
-                passengerDaemon.Start(gi, 1.00, true);
+                vehicleJoinTrafficDispatcher.Start(gi, 1.00, true);
             } else {
                 let ii: Int32 = 1;
                 while ii < ArraySize(squad.units) {
