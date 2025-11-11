@@ -893,13 +893,13 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             passengerDaemon.vehicleID = vehID;
             let u = 1;
             while u < ArraySize(this.groundPoliceSquads[s].units) {
-                let npcMonitor = new CyberpsychoEncountersNCPDUnitMountCommandDispatcher();
+                let mountDispatcher = new CyberpsychoEncountersNCPDUnitMountCommandDispatcher();
                 let npc: ref<ScriptedPuppet> = GameInstance.FindEntityByID(GetGameInstance(), this.groundPoliceSquads[s].units[u]) as ScriptedPuppet;
-                npcMonitor.parent = passengerDaemon;
-                npcMonitor.unit = npc;
-                npcMonitor.vehicleID = vehID;
-                npcMonitor.SetupListener();
-                ArrayPush(passengerDaemon.unitMonitors, npcMonitor);
+                mountDispatcher.parent = passengerDaemon;
+                mountDispatcher.unit = npc;
+                mountDispatcher.vehicleID = vehID;
+                mountDispatcher.SetupListener();
+                ArrayPush(passengerDaemon.unitMonitors, mountDispatcher);
                 u += 1;
             };
 
@@ -1873,12 +1873,12 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                     preventionSys.RegisterPreventionUnit(npc, DynamicVehicleType.Car, false);
                     (npc as ScriptedPuppet).TryRegisterToPrevention();
                     if this.CanGroundUnitMountConvoyVehicle((npc as ScriptedPuppet), (veh as WheeledObject)) {
-                        let npcMonitor = new CyberpsychoEncountersNCPDUnitMountCommandDispatcher();
-                        npcMonitor.parent = passengerDaemon;
-                        npcMonitor.unit = npc;
-                        npcMonitor.vehicleID = vehID;
-                        npcMonitor.SetupListener();
-                        ArrayPush(passengerDaemon.unitMonitors, npcMonitor);
+                        let mountDispatcher = new CyberpsychoEncountersNCPDUnitMountCommandDispatcher();
+                        mountDispatcher.parent = passengerDaemon;
+                        mountDispatcher.unit = npc;
+                        mountDispatcher.vehicleID = vehID;
+                        mountDispatcher.SetupListener();
+                        ArrayPush(passengerDaemon.unitMonitors, mountDispatcher);
                     };
                     NPCPuppet.ChangeHighLevelState(npc,
                                                    gamedataNPCHighLevelState.Relaxed);
