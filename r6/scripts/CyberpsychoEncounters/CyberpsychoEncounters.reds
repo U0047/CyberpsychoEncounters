@@ -9,6 +9,22 @@ import Utils2077.SpatialUtils.{GetDistrictManager,
                                IsPlayerNearQuestMappin,
                                isPointInAnyLoadedSecurityAreaRadius}
 
+// Stops prevention units from entering a strange hostile but not hostile
+// state that makes minimap icons turn red.
+@wrapMethod(NPCPuppet)
+public final static func IsInCombatWithTarget(npc: wref<ScriptedPuppet>, target: ref<Entity>) -> Bool {
+    let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
+    let preventionSys = GameInstance.GetScriptableSystemsContainer(GetGameInstance()).Get(n"PreventionSystem") as PreventionSystem;
+    if psychoSys.isCyberpsychoEventInProgress()
+    && !psychoSys.isCyberpsychoDefeated()
+    && Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
+        if (target as GameObject).IsPlayer() && npc.IsPrevention() {
+            return false;
+        };
+    };
+    return wrappedMethod(npc, target);
+};
+
 // This wrap stops a panic drive command from being sent to convoy vehicles
 // when the driver mounts after cyberpsychos are defeated. Without this the
 // panic command may be sent and started before psychoSys.EndNCPDNpcResponse
@@ -136,39 +152,6 @@ protected func Update() -> Void {
         };
     };
     wrappedMethod();
-};
-
-//Here to prevent police from being aggro'd by player when shot during psycho
-//event
-@wrapMethod(StealthMappinController)
-private final func UpdateNPCDetection(percent: Float) -> Void {
-    let gi: GameInstance = GetGameInstance();
-    let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-    let preventionSys = GameInstance.GetScriptableSystemsContainer(gi).Get(n"PreventionSystem") as PreventionSystem;
-    if psychoSys.isCyberpsychoCombatStarted() {
-        if this.m_ownerNPC.IsPrevention()
-        && Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
-            this.m_isInCombatWithPlayer = false;
-        };
-    };
-    wrappedMethod(percent);
-};
-
-// see the big-brained stuff in StealthMappinController.UpdateNPCDetection to
-// understand why this is necessary.
-@wrapMethod(StealthMappinController)
-private final func UpdateNameplateColor(isHostile: Bool) -> Void {
-    let gi: GameInstance = GetGameInstance();
-    let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-    let preventionSys = GameInstance.GetScriptableSystemsContainer(gi).Get(n"PreventionSystem") as PreventionSystem;
-    if psychoSys.isCyberpsychoCombatStarted() {
-        if isHostile
-        && this.m_ownerNPC.IsPrevention()
-        && Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
-            return;
-        };
-    };
-    wrappedMethod(isHostile);
 };
 
 // FIXME This is a workaround to a bug where spawned police turn
