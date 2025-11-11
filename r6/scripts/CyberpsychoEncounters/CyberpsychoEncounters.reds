@@ -1334,7 +1334,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let gi: GameInstance = GetGameInstance();
         let mappinSys = GameInstance.GetMappinSystem(gi);
         this.cyberpsychoTargetDaemon.Stop();
-        let gi: GameInstance = GetGameInstance();
         let delaySys = GameInstance.GetDelaySystem(gi);
         let playerSecondsAwayDaemon = new CyberpsychoEncountersPlayerSecondsAwayDaemon();
         this.playerSecondsAwayDaemon = playerSecondsAwayDaemon;
