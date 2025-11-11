@@ -1968,6 +1968,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         SaveLocksManager.RequestSaveLockRemove(gi, n"CyberpsychoEncountersEventInProgress");
         FastTravelSystem.RemoveFastTravelLock(n"CyberpsychoEncountersEventInProgress", gi);
         this.isCyberpsychoEventInProgress = false;
+        this.isCyberpsychoCombatStarted = false;
         this.lastEncounterSecondsDaemon.Start(gi, 1.00, true);
     };
 
