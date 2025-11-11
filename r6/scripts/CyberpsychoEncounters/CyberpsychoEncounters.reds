@@ -15,11 +15,11 @@ import Utils2077.SpatialUtils.{GetDistrictManager,
 public final static func IsInCombatWithTarget(npc: wref<ScriptedPuppet>, target: ref<Entity>) -> Bool {
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
     let preventionSys = GameInstance.GetScriptableSystemsContainer(GetGameInstance()).Get(n"PreventionSystem") as PreventionSystem;
-    if psychoSys.isCyberpsychoCombatStarted()
-    && !psychoSys.isCyberpsychoDefeated()
-    && Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
-        if (target as GameObject).IsPlayer() && npc.IsPrevention() {
-            return false;
+    if psychoSys.isCyberpsychoCombatStarted() || psychoSys.isPreventionSystemEnablePending {
+        if Equals(preventionSys.GetHeatStage(), EPreventionHeatStage.Heat_0) {
+            if (target as GameObject).IsPlayer() && npc.IsPrevention() {
+                return false;
+            };
         };
     };
     return wrappedMethod(npc, target);
@@ -57,16 +57,24 @@ protected func Update(context: ScriptExecutionContext) -> AIbehaviorUpdateOutcom
     return AIbehaviorUpdateOutcome.FAILURE;
 }
 
-// This is here to prevent police from going ballistic on civs.
+// This is here to prevent police from going ballistic on civs and so police
+// don't turn hostile from leftover hostile stim from player after psycho combat
+// ends and prevention system is reenabled.
 @wrapMethod(AIActionHelper)
 public final static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>,
                                                       target: ref<GameObject>) -> Bool {
-    let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
-    if psychoSys.isCyberpsychoCombatStarted() && owner.IsPrevention() {
-        if (target as ScriptedPuppet).IsCivilian() || (target as ScriptedPuppet).IsCrowd() {
-            return false;
+    if owner.IsPrevention() {
+        let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
+        if psychoSys.isCyberpsychoCombatStarted() || psychoSys.isPreventionSystemEnablePending {
+            if target.IsPlayer()
+            || (target as ScriptedPuppet).IsCivilian()
+            || (target as ScriptedPuppet).IsCrowd() {
+                return false;
+            };
+
         };
     };
+
     return wrappedMethod(owner, target);
 };
 
@@ -160,14 +168,14 @@ protected func Update() -> Void {
 @wrapMethod(TargetTrackingExtension)
 protected cb func OnEnemyThreatDetected(th: ref<EnemyThreatDetected>) -> Bool {
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
-    if psychoSys.isCyberpsychoCombatStarted() {
+    if psychoSys.isCyberpsychoCombatStarted() || psychoSys.isPreventionSystemEnablePending {
         if (th.threat as ScriptedPuppet).IsPlayer()
         && (th.owner as ScriptedPuppet).IsPrevention() {
             return false;
         };
     };
     return wrappedMethod(th);
-}
+};
 
 // This is here so that the custom cyberpsycho map pin can be registered.
 @wrapMethod(MinimapContainerController)
@@ -300,7 +308,9 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     let gi: GameInstance = GetGameInstance();
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
     if !psychoSys.isCyberpsychoCombatStarted() || psychoSys.isCyberpsychoDefeated() {
-        return wrappedMethod(evt);
+        if !psychoSys.isPreventionSystemEnablePending {
+            return wrappedMethod(evt);
+        };
     };
 
     let attackData = evt.attackData;
@@ -330,7 +340,7 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
 public final static func ShouldPreventionSystemReactToDamageDealt(puppet: wref<ScriptedPuppet>) -> Bool {
     let gi: GameInstance = GetGameInstance();
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-    if psychoSys.isCyberpsychoCombatStarted() && !psychoSys.isCyberpsychoDefeated() {
+    if psychoSys.isCyberpsychoCombatStarted() && psychoSys.isPreventionSystemEnablePending {
         return false;
     };
     return wrappedMethod(puppet);
@@ -556,9 +566,11 @@ class CyberpsychoEncountersDelayPreventionSystemToggledCallback extends DelayCal
 
     func Call() -> Void {
         let gi: GameInstance = GetGameInstance();
+        let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
         let scriptableContainer = GameInstance.GetScriptableSystemsContainer(gi);
         let preventionSys = scriptableContainer.Get(n"PreventionSystem") as PreventionSystem;
         preventionSys.TogglePreventionSystem(this.toggle);
+        psychoSys.OnPreventionSystemReenabled();
     };
 }
 
@@ -850,6 +862,8 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     persistent let isCyberpsychoCombatStarted: Bool = false;
 
+    persistent let isPreventionSystemEnablePending: Bool = false;
+
     let lastEncounterSecondsDaemon: ref<CyberpsychoEncountersLastEncounterSecondsDaemon>;
 
     let eventStarterDaemon: ref<CyberpsychoEncountersEventStarterDaemon>;
@@ -884,6 +898,13 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.settings = new CyberpsychoEncountersSettings();
         this.districtManager = GetDistrictManager();
         FTLog(s"[CyberpsychoEncountersEventSystem][OnRestored]: Units pending deletion? \(this.isUnitDeletionPending)");
+        if this.isPreventionSystemEnablePending {
+            let delaySys = GameInstance.GetDelaySystem(gi);
+            let EnablePreventionCback = new CyberpsychoEncountersDelayPreventionSystemToggledCallback();
+            EnablePreventionCback.toggle = true;
+            delaySys.DelayCallback(EnablePreventionCback, 5.00, true);
+        };
+
         this.RequestDeleteUnits();
         let s = 0;
         while s < ArraySize(this.groundPoliceSquads) {
@@ -1841,11 +1862,16 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let EnablePreventionCback = new CyberpsychoEncountersDelayPreventionSystemToggledCallback();
         EnablePreventionCback.toggle = true;
         delaySys.DelayCallback(EnablePreventionCback, 5.00, true);
+        this.isPreventionSystemEnablePending = true;
         this.lastEncounterSeconds = 0u;
         SaveLocksManager.RequestSaveLockRemove(gi, n"CyberpsychoEncountersEventInProgress");
         FastTravelSystem.RemoveFastTravelLock(n"CyberpsychoEncountersEventInProgress", gi);
         // For some reason the healthbar doesn't always hide unless forced.
         BossHealthBarGameController.ReevaluateBossHealthBar(cyberpsycho, GetPlayer(gi), true);
+    };
+
+    func OnPreventionSystemReenabled() -> Void {
+        this.isPreventionSystemEnablePending = false;
     };
 
     func EndNCPDNpcResponse() -> Void {
