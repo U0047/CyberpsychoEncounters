@@ -83,7 +83,7 @@ public final static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>
 @wrapMethod(VehicleComponent)
 protected cb func OnGridDestruction(evt: ref<VehicleGridDestructionEvent>) -> Bool {
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
-    if psychoSys.isCyberpsychoCombatStarted()
+    if psychoSys.isCyberpsychoEventInProgress()
     || psychoSys.lastEncounterSeconds < Cast<Uint32>(45) {
         if this.GetVehicle().IsPrevention() && evt.rammedOtherVehicle {
             return false;
