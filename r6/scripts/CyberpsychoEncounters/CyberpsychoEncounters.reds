@@ -340,7 +340,7 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
 public final static func ShouldPreventionSystemReactToDamageDealt(puppet: wref<ScriptedPuppet>) -> Bool {
     let gi: GameInstance = GetGameInstance();
     let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(gi);
-    if psychoSys.isCyberpsychoCombatStarted() && psychoSys.isPreventionSystemEnablePending {
+    if psychoSys.isCyberpsychoCombatStarted() || psychoSys.isPreventionSystemEnablePending {
         return false;
     };
     return wrappedMethod(puppet);
