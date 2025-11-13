@@ -912,8 +912,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     persistent let groundPoliceSquads: array<CyberpsychoEncountersNCPDGroundPoliceSquad>;
 
-    persistent let isUnitDeletionPending: Bool;
-
     persistent let cyberpsychoID: EntityID;
 
     let cyberpsychoMappinID: NewMappinID;
@@ -940,16 +938,32 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     let playerSecondsAwayDaemon: ref<CyberpsychoEncountersPlayerSecondsAwayDaemon>;
 
+    let groundPoliceDeletionDaemon: ref<CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon>;
+
     private func OnAttach() -> Void {
         ModSettings.RegisterListenerToModifications(this);
     };
 
     func RequestDeleteUnits() -> Void {
+        if this.IsUnitDeletionPending() {
+            return;
+        };
+
         if ArraySize(this.groundPoliceSquads) > 0 {
             let deletionDaemon = new CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon();
+            this.groundPoliceDeletionDaemon = deletionDaemon;
             deletionDaemon.squads = this.groundPoliceSquads;
             deletionDaemon.Start(GetGameInstance(), 1.00, false);
         };
+
+    };
+
+    func IsUnitDeletionPending() -> Bool {
+        if !IsDefined(this.groundPoliceDeletionDaemon) {
+            return false;
+        };
+
+        return this.groundPoliceDeletionDaemon.IsActive();
     };
 
 
@@ -957,7 +971,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         let gi: GameInstance = GetGameInstance();
         this.settings = new CyberpsychoEncountersSettings();
         this.districtManager = GetDistrictManager();
-        FTLog(s"[CyberpsychoEncountersEventSystem][OnRestored]: Units pending deletion? \(this.isUnitDeletionPending)");
         if this.isPreventionSystemEnablePending {
             let delaySys = GameInstance.GetDelaySystem(gi);
             let EnablePreventionCback = new CyberpsychoEncountersDelayPreventionSystemToggledCallback();
@@ -1114,7 +1127,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
             return false;
         };
 
-        if this.isUnitDeletionPending {
+        if this.IsUnitDeletionPending() {
             return false;
         };
 
@@ -2062,7 +2075,6 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
                                             daemons_to_stop: array<ref<CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher>>,
                                             all_units_deleted: Bool) -> Void {
         if all_units_deleted {
-            this.isUnitDeletionPending = false;
             ArrayClear(this.groundPoliceSquads);
         };
 
