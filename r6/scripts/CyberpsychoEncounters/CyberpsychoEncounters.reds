@@ -639,7 +639,6 @@ class CyberpsychoEncountersConvoyVehicleArrivalDaemon extends DelayDaemon  {
 
 class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends DelayDaemon {
     let vehicleID: EntityID;
-    let cmd: ref<AIVehicleJoinTrafficCommand>;
     let unitMountDispatchers: array<ref<CyberpsychoEncountersNCPDUnitMountCommandDispatcher>>;
 
     func Call() -> Void {
@@ -655,20 +654,62 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
             return;
         };
 
+        if IsDefined(chase_cmd) {
+            let chase_cmd_state = vehicle.GetAIComponent().GetCommandState(chase_cmd);
+            if Equals(chase_cmd_state, AICommandState.Executing) {
+                this.Repeat();
+                return;
+            };
+
+            if IsDefined(cmd) {
+                let cmd_state = vehicle.GetAIComponent().GetCommandState(cmd);
+                if Equals(chase_cmd_state, AICommandState.Enqueued) && Equals(cmd_state, AICommandState.Executing) {
+                    vehicle.GetAIComponent().StopExecutingCommand(cmd, false);
+                    this.Repeat();
+                    return;
+                };
+            };
+        };
+
         for monitor in this.unitMountDispatchers {
             let u = monitor.unit;
             if !VehicleComponent.IsMountedToProvidedVehicle(this.gi, u.GetEntityID(), vehicle) {
-                if IsDefined(this.cmd) {
-                    vehicle.GetAIComponent().CancelCommand(this.cmd);
-                    this.cmd = null;
+                if IsDefined(cmd) {
+                    let cmd_state = vehicle.GetAIComponent().GetCommandState(cmd);
+                    if Equals(cmd_state, AICommandState.Enqueued) {
+                        vehicle.GetAIComponent().CancelCommand(cmd);
+                    };
+                    if Equals(cmd_state, AICommandState.Executing) {
+                        vehicle.GetAIComponent().StopExecutingCommand(cmd, false);
+                    };
                 };
                 this.Repeat();
                 return;
             };
+
+            let unit_hls = u.GetHighLevelStateFromBlackboard();
+            if Equals(unit_hls, gamedataNPCHighLevelState.Combat) {
+                let top_threat: TrackedLocation;
+                let utt = u.GetTargetTracker();
+                if IsDefined(utt) {
+                    if utt.GetTopHostileThreat(true, top_threat) {
+                        if IsDefined(top_threat.entity) {
+                            let command: ref<AIVehicleChaseCommand> = new AIVehicleChaseCommand();
+                            command.target = top_threat.entity as GameObject;
+                            command.distanceMin = 3.00;
+                            command.distanceMax = 10.00;
+                            command.forcedStartSpeed = -1.00;
+                            vehicle.GetAIComponent().SendCommand(command);
+                            this.Repeat();
+                            return;
+                        };
+                    };
+                };
+            };
         };
 
-        if IsDefined(this.cmd) {
-            let cmd_state = vehicle.GetAIComponent().GetCommandState(this.cmd);
+        if IsDefined(cmd) {
+            let cmd_state = vehicle.GetAIComponent().GetCommandState(cmd);
             if Equals(cmd_state, AICommandState.Enqueued)
             || Equals(cmd_state, AICommandState.Executing) {
                 this.Repeat();
@@ -681,7 +722,6 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
         command.needDriver = true;
         command.useKinematic = true;
         vehicle.GetAIComponent().SendCommand(command);
-        this.cmd = command;
         this.Repeat();
     };
 
