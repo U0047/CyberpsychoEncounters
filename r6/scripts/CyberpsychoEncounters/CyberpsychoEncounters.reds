@@ -659,6 +659,8 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
             return;
         };
 
+        let chase_cmd  = vehicle.GetAIComponent().GetEnqueuedOrExecutingCommand(n"AIVehicleChaseCommand", false);
+        let cmd  = vehicle.GetAIComponent().GetEnqueuedOrExecutingCommand(n"AIVehicleJoinTrafficCommand", false);
         if IsDefined(chase_cmd) {
             let chase_cmd_state = vehicle.GetAIComponent().GetCommandState(chase_cmd);
             if Equals(chase_cmd_state, AICommandState.Executing) {
