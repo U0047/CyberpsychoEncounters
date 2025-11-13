@@ -65,10 +65,15 @@ public final static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>
                                                       target: ref<GameObject>) -> Bool {
     if owner.IsPrevention() {
         let psychoSys = GameInstance.GetCyberpsychoEncountersSystem(GetGameInstance());
-        if psychoSys.isCyberpsychoCombatStarted() || psychoSys.isPreventionSystemEnablePending {
-            if target.IsPlayer()
-            || (target as ScriptedPuppet).IsCivilian()
+        if psychoSys.isCyberpsychoEventInProgress() {
+            if (target as ScriptedPuppet).IsCivilian()
             || (target as ScriptedPuppet).IsCrowd() {
+                return false;
+            };
+        };
+
+        if psychoSys.isCyberpsychoCombatStarted() || psychoSys.isPreventionSystemEnablePending {
+            if target.IsPlayer() {
                 return false;
             };
 
