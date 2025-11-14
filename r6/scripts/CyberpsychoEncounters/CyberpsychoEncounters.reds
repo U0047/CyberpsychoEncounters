@@ -662,6 +662,15 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
         let chase_cmd  = vehicle.GetAIComponent().GetEnqueuedOrExecutingCommand(n"AIVehicleChaseCommand", false);
         let cmd  = vehicle.GetAIComponent().GetEnqueuedOrExecutingCommand(n"AIVehicleJoinTrafficCommand", false);
         if IsDefined(chase_cmd) {
+            if VehicleComponent.GetDriver(this.gi, vehicle, vehicle.GetEntityID()).IsPlayer() {
+                let chase_cmd_state = vehicle.GetAIComponent().GetCommandState(chase_cmd);
+                if Equals(chase_cmd_state, AICommandState.Executing) {
+                    vehicle.GetAIComponent().StopExecutingCommand(chase_cmd, false);
+                };
+                this.Stop();
+                return;
+            };
+
             let chase_cmd_state = vehicle.GetAIComponent().GetCommandState(chase_cmd);
             if Equals(chase_cmd_state, AICommandState.Executing) {
                 this.Repeat();
@@ -692,23 +701,25 @@ class CyberpsychoEncountersNCPDVehicleJoinTrafficCommandDispatcher extends Delay
                 };
                 this.Repeat();
                 return;
-            };
+            } else {
 
-            let unit_hls = u.GetHighLevelStateFromBlackboard();
-            if Equals(unit_hls, gamedataNPCHighLevelState.Combat) {
-                let top_threat: TrackedLocation;
-                let utt = u.GetTargetTracker();
-                if IsDefined(utt) {
-                    if utt.GetTopHostileThreat(true, top_threat) {
-                        if IsDefined(top_threat.entity) {
-                            let command: ref<AIVehicleChaseCommand> = new AIVehicleChaseCommand();
-                            command.target = top_threat.entity as GameObject;
-                            command.distanceMin = 3.00;
-                            command.distanceMax = 10.00;
-                            command.forcedStartSpeed = -1.00;
-                            vehicle.GetAIComponent().SendCommand(command);
-                            this.Repeat();
-                            return;
+                let unit_hls = u.GetHighLevelStateFromBlackboard();
+                if Equals(unit_hls, gamedataNPCHighLevelState.Combat) {
+                    let top_threat: TrackedLocation;
+                    let utt = u.GetTargetTracker();
+                    if IsDefined(utt) {
+                        if utt.GetTopHostileThreat(true, top_threat) {
+                            if IsDefined(top_threat.entity) {
+                                FTLog("SENDING CONVOY CHASE CMD");
+                                let command: ref<AIVehicleChaseCommand> = new AIVehicleChaseCommand();
+                                command.target = top_threat.entity as GameObject;
+                                command.distanceMin = 3.00;
+                                command.distanceMax = 10.00;
+                                command.forcedStartSpeed = -1.00;
+                                vehicle.GetAIComponent().SendCommand(command);
+                                this.Repeat();
+                                return;
+                            };
                         };
                     };
                 };
