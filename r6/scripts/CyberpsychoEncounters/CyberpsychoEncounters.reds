@@ -975,6 +975,8 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
 
     let groundPoliceDeletionDaemon: ref<CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon>;
 
+    persistent let psychoNullAreaID: Uint64;
+
     private func OnAttach() -> Void {
         ModSettings.RegisterListenerToModifications(this);
     };
@@ -1977,6 +1979,11 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         // For some reason the healthbar doesn't always hide unless forced.
         BossHealthBarGameController.ReevaluateBossHealthBar(cyberpsycho, GetPlayer(gi), true);
         this.RequestDeleteUnits();
+        let null_area_box: Box;
+        null_area_box.Min = new Vector4(-100.00, -100.00, -100.00, 0.00);
+        null_area_box.Max = new Vector4(100.00, 100.00, 100.00, 0.00);
+        this.psychoNullAreaID = GameInstance.GetCommunitySystem(gi).EnableDynamicCrowdNullArea(null_area_box, cyberpsycho.GetWorldTransform(), true, -1.00);
+
     };
 
     func OnPreventionSystemReenabled() -> Void {
@@ -2105,6 +2112,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         this.isCyberpsychoEventInProgress = false;
         this.isCyberpsychoCombatStarted = false;
         this.lastEncounterSecondsDaemon.Start(gi, 1.00, true);
+        GameInstance.GetCommunitySystem(gi).DisableCrowdNullArea(this.psychoNullAreaID);
     };
 
     func OnGroundNCPDUnitsDeletionRequested(units_to_delete: array<EntityID>,
