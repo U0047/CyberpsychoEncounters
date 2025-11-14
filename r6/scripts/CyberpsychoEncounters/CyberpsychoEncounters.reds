@@ -1952,6 +1952,7 @@ public class CyberpsychoEncountersEventSystem extends ScriptableSystem {
         FastTravelSystem.RemoveFastTravelLock(n"CyberpsychoEncountersEventInProgress", gi);
         // For some reason the healthbar doesn't always hide unless forced.
         BossHealthBarGameController.ReevaluateBossHealthBar(cyberpsycho, GetPlayer(gi), true);
+        this.RequestDeleteUnits();
     };
 
     func OnPreventionSystemReenabled() -> Void {
