@@ -517,25 +517,29 @@ class CyberpsychoEncountersNCPDGroundPoliceDeletionDaemon extends DelayDaemon {
                 let unitID = this.squads[s].units[u];
                 let unit: wref<Entity> = GameInstance.FindEntityByID(this.gi,
                                                                      unitID);
-                let unit_pos = unit.GetWorldPosition();
-                // the Distance check below is because some units do not detach
-                // for some reason even though they're very far from the player.
-                if !IsDefined(unit)
-                || !unit.IsAttached()
-                || Vector4.DistanceSquared(player_pos, unit_pos) > 62500.00 {
-                    if IsDefined(unit as VehicleObject) {
+
+                // we don't want units disappearing from inside vehicles.
+                if !VehicleComponent.IsMountedToVehicle(this.gi, unitID) {
+                    let unit_pos = unit.GetWorldPosition();
+                    // the distance check below is because some units do not detach
+                    // for some reason even though they're very far from the player.
+                    if !IsDefined(unit)
+                    || !unit.IsAttached()
+                    || Vector4.DistanceSquared(player_pos, unit_pos) > 62500.00 {
                         ArrayPush(daemons_to_stop, this.squads[s].vehicleJoinTrafficDispatcher);
                         let passengers: array<wref<GameObject>>;
                         VehicleComponent.GetAllPassengers(this.gi, unitID, true, passengers);
                         let p = ArraySize(passengers);
                         let u = 0;
                         while u < p {
-                            ArrayPush(units_to_delete, passengers[u].GetEntityID());
+                            let pID = passengers[u].GetEntityID();
+                            ArrayPush(units_to_delete, pID);
+                            ArrayRemove(this.squads[s].units, pID);
                             u += 1;
                         };
+                        ArrayPush(units_to_delete, unitID);
+                        ArrayRemove(this.squads[s].units, unitID);
                     };
-                    ArrayPush(units_to_delete, unitID);
-                    ArrayRemove(this.squads[s].units, unitID);
                 };
                 u += 1;
             };
