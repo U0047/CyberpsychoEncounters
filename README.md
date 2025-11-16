@@ -24,7 +24,6 @@
     - May be incompatible with mods that make changes to the wanted system and police.
 
 ### PLANNED UPDATES
-    - Improved police convoy AI
     - Improved cyberpsycho AI 
     - Custom cyberpsycho NPCs
     - Mod compatibility patches as needed 
