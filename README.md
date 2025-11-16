@@ -19,10 +19,6 @@
     - Maxtac AV sometimes spawns partially in buildings.
     - Minor minimap UI bugs.
 
-### COMPATIBILITY
-    - May be incompatible with mods that make changes to NPC behavior.
-    - May be incompatible with mods that make changes to the wanted system and police.
-
 ### PLANNED UPDATES
     - Improved cyberpsycho AI 
     - Custom cyberpsycho NPCs
