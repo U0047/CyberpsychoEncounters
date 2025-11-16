@@ -15,9 +15,7 @@
     2. Extract the zip file into the main 'Cyberpunk 2077' directory.
 
 ### KNOWN BUGS
-    - POLICE CONVOYS ARE STILL VERY BUGGY AND SOMETIMES SPAWN IN WALLS. Fixes are planned for later updates.
     - Maxtac AV sometimes spawns partially in buildings.
-    - Minor minimap UI bugs.
 
 ### PLANNED UPDATES
     - Improved cyberpsycho AI 
